@@ -2,5 +2,7 @@
 
 int main()
 {
-	void *test = malloc(123);
+	show_alloc_mem();
+	void *test = ft_malloc(123);
+	show_alloc_mem();
 }
