@@ -2,5 +2,5 @@
 
 int main()
 {
-	malloc(123);
+	void *test = malloc(123);
 }

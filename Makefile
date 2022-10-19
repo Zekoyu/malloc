@@ -53,8 +53,10 @@ $(NAME):	$(LIBFT) $(OBJS)
 
 all:		$(NAME)
 
-test: $(NAME)
+test: $(NAME) main.o
+	@echo
 	@gcc -lft_malloc -L./ main.c -o test
+	@echo "$(GREEN_BOLD)Done compiling $(GREEN_UNDERLINE)test$(RESET)"
 
 $(LIBFT):
 	@$(MAKE) -C $(LIBFT_FOLDER) NO_FT_MALLOC=1 NO_GNL=1
