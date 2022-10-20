@@ -6,10 +6,12 @@
 #include "../libft/libft.h"
 
 t_page *g_page = NULL;
+size_t g_alloc_pages = 0;
 
 t_page *allocate_page(size_t count)
 {
 	void *addr;
+	g_alloc_pages += count;
 	size_t alloc_size = count * getpagesize();
 	// allow read/write, private (only this process can see it), anonymous means it's not backed by a file, just for data storage
 	if ((addr = mmap(NULL, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0)) == MAP_FAILED) // we dont care about last 2 args(fd and offset)
@@ -38,6 +40,11 @@ t_page *allocate_page(size_t count)
 	return page;
 }
 
+void show_alloc_pages()
+{
+	printf("Allocated %zu pages using mmap\n", g_alloc_pages);
+}
+
 void show_alloc_mem()
 {
 	size_t alloc_bytes = 0;
@@ -50,6 +57,20 @@ void show_alloc_mem()
 	printf("Total : %zu bytes\n", alloc_bytes);
 }
 
+void show_struct_mem_space()
+{
+	size_t pages = 0;
+	size_t blocks = 0;
+	for (t_page *page = g_page; page != NULL; page = page->next)
+		pages++;
+	for (t_block *block = g_page ? g_page->first : NULL; block != NULL; block = block->next)
+		blocks++;
+
+	size_t pages_size = pages * sizeof(t_page);
+	size_t blocks_size = blocks * sizeof(t_block);
+	printf("%zu blocks (%zu bytes), and %zu pages (%zu bytes)\nTotal : %zu bytes used to store blocks / pages infos\n", blocks, blocks_size, pages, pages_size, pages_size + blocks_size);
+}
+
 typedef struct s_free_space
 {
 	t_page *page;
@@ -58,6 +79,7 @@ typedef struct s_free_space
 } t_free_space;
 
 // find free space of size bytes in already allocated pages (called should count the t_block size as part of size)
+// memory aligned on 8 bytes (so either ending in 0 or 8)
 t_free_space find_free_space(size_t size)
 {
 	t_free_space ret;
@@ -116,7 +138,6 @@ t_free_space find_free_space(size_t size)
 
 t_block *get_last_block()
 {
-	printf("g_page first block is %p\n", g_page->first);
 	t_block *last = NULL;
 	for (t_block *block = g_page ? g_page->first : NULL; block != NULL; block = block->next)
 		last = block;
@@ -157,6 +178,8 @@ void *ft_malloc(size_t size)
 			page->first = block;
 			page->last = block;
 		}
+
+		return block->addr;
 	}
 	else
 	{
@@ -168,7 +191,6 @@ void *ft_malloc(size_t size)
 			return NULL;
 		}
 		t_block *last = get_last_block();
-		printf("Last block is %p while allocating %zu bytes\n", last, size);
 		t_block *block = init_block(page->addr, size);
 		if (last)
 		{
@@ -177,8 +199,9 @@ void *ft_malloc(size_t size)
 		}
 		page->first = block;
 		page->last = block;
-	}
 
+		return block->addr;
+	}
 
 	return NULL;
 }

@@ -28,5 +28,7 @@ typedef struct s_page
 
 void *ft_malloc(size_t size);
 void show_alloc_mem();
+void show_struct_mem_space();
+void show_alloc_pages();
 
 #endif
