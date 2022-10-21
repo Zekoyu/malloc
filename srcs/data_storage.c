@@ -43,42 +43,47 @@ t_free_space find_free_space(size_t size)
 
 	for (t_page *page = g_data.pages; page != NULL; page = page->next)
 	{
-		char free_space[page->size];
-		ft_memset(free_space, 1, page->size);
+		// - Check if no blocks
+		// - Check before first block
+		// - Check in between blocks
+		// - Check after last block
 
-		for (t_block *block = page->first; block != NULL; block = block->next)
+		if (!page->first && size <= page->size)
 		{
-			size_t offset = (char *)block->addr - (char *)page->addr;
-			if (offset <= page->size )// should be unnecessary but we never check enough
-				ft_memset(free_space + offset, 0, block->size);
+			free_data_space.addr = page->addr;
+			free_data_space.page = page;
+			return free_data_space;
+		}
 
-			if (block == page->last)
+		size_t free_before_first_block = ((char *)page->first->addr - (char *)page->addr);
+		if (free_before_first_block >= size)
+		{
+			free_data_space.addr = page->addr;
+			free_data_space.page = page;
+			return free_data_space;
+		}
+
+		for (t_block *block = page->first; block->next != NULL; block = block->next)
+		{
+			size_t free_space = (char *)block->next->addr - ((char *)block->addr + block->size);
+
+			if (free_space >= size)
+			{
+				free_data_space.addr = (char *)block->addr + block->size;
+				free_data_space.page = page;
+				return free_data_space;
+			}
+
+			if (block->next == page->last)
 				break;
 		}
 
-		// printf("[");
-		// for (size_t i = 0; i < page->size; i++)
-		// {
-		// 	printf("%c", free_space[i] + '0');
-		// }
-		// printf("]\n");
-
-
-		size_t matched = 0;
-		for (size_t i = 0; i < page->size; i++)
+		size_t free_after_last_block = ((char *)page->addr + page->size) - ((char *)page->last->addr + page->last->size);
+		if (free_after_last_block >= size)
 		{
-			if (free_space[i] == 1)
-			{
-				matched++;
-				if (matched >= size)
-				{
-					free_data_space.addr = (char *)page->addr + i + 1 - matched; // + 1 since i starts at 0
-					free_data_space.page = page;
-					return free_data_space;
-				}
-			}
-			else
-				matched = 0;
+			free_data_space.addr = (char *)page->last->addr + page->last->size;
+			free_data_space.page = page;
+			return free_data_space;
 		}
 	}
 

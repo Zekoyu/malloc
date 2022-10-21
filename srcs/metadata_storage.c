@@ -314,3 +314,24 @@ t_block *create_block_metadata(t_page *page)
 
 	return block;
 }
+
+
+void show_alloc_mem()
+{
+	size_t total_bytes = 0;
+	for (t_block *block = g_data.blocks; block != NULL; block = block->next)
+	{
+		total_bytes += block->size;
+		printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->size, block->size);
+	}
+	printf("Total : %zu bytes\n", total_bytes);
+}
+
+
+void show_alloc_pages()
+{
+	for (t_page *page = g_data.pages; page != NULL; page = page->next)
+	{
+		printf("Page %p, first block: %p, last block: %p\n", page->addr, page->first ? page->first->addr : NULL, page->last ? page->last->addr : NULL);
+	}
+}
