@@ -2,29 +2,74 @@
 #define FT_MALLOC_H
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
 typedef struct s_block
 {
-	// size_t alignment_offset; // will see later if needed
-	void *addr; // char * for arithmetic
-	char *real_addr;
-	size_t size; // malloced size
-	size_t real_size; // real size (including this struct)
+	void *addr;
+	size_t size;
 	struct s_block *next;
 	struct s_block *prev; // keep prev in case of free so that we can easily remove it without traversing the whole chained list
 } t_block;
 
 typedef struct s_page
 {
-	// because first sizeof(t_page) bytes contains this struct, real data storage starts at (addr + sizeof(t_page))
-	void *addr; // char * for arithmetic
-	char *real_addr;
+	void *addr;
 	t_block *first; // first block of page
 	t_block *last; // last block of page
 	size_t size;
-	size_t real_size;
 	struct s_page *next;
 } t_page;
+
+typedef struct s_free_space
+{
+	t_page *page;
+	t_block *prev_block;
+	void *addr;
+} t_free_space;
+
+typedef struct s_meta_page // used to store malloced pages/blocks
+{
+	void *addr; // address of page (addr[0] = this struct)
+	size_t size; // size of page (multiple of getpagesize())
+	struct s_meta_page *next; // next local page
+	t_page *first_page; // first page in this metadata page (so we can iterate through)
+	t_page *last_page;
+} t_meta_page;
+
+/*
+	Memory layout
+                                               +------------------+---------+
+                                               |                  V         V
+	+--------------------------------------+--------+--------+---------+---------+
+	| META_PAGE  -  Metadata (t_meta_page) | t_page | t_page | t_block | t_block |
+	+--------------------------------------+--------+--------+---------+---------+
+	        +---------------------------------+                   |         |
+            |              +--------------------------------------+         |
+            |              |              +---------------------------------+
+            V              V              V
+	+-------------+---------------+---------------+
+	| (DATA) PAGE | DATA (void *) | DATA (void *) |
+	+-------------+---------------+---------------+
+
+	Local page stores all metadata, and "standard" page only stores data
+*/
+
+typedef struct s_malloc_data
+{
+	t_page *pages;
+	t_block *blocks;
+	t_meta_page *meta_pages;
+} t_malloc_data;
+
+
+extern t_malloc_data g_data;
+
+t_page *create_page_metadata();
+t_block *create_block_metadata(t_page *page);
+
 
 void *ft_malloc(size_t size);
 void show_alloc_mem();

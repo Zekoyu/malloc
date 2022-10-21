@@ -13,7 +13,7 @@ NAME := libft_malloc_$(HOSTTYPE).so
 
 CC = gcc
 
-CFLAGS = # -Wall -Wextra -Werror
+CFLAGS = -g # -Wall -Wextra -Werror
 
 SHELL = zsh
 
@@ -55,7 +55,7 @@ all:		$(NAME)
 
 test: $(NAME) main.o
 	@echo
-	@gcc -lft_malloc -L./ main.c -o test
+	@$(CC) $(CFLAGS) -lft_malloc -L./ main.c -o test
 	@echo "$(GREEN_BOLD)Done compiling $(GREEN_UNDERLINE)test$(RESET)"
 
 $(LIBFT):
