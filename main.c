@@ -34,7 +34,7 @@ int main()
 	{
 		t_tg	*oui;
 
-		oui = ft_malloc(sizeof(t_tg) * 3);
+		oui = malloc(sizeof(t_tg) * 3);
 		ft_bzero(oui, sizeof(t_tg) * 3);
 
 		for (int i = 0; i < 3; i++)
@@ -49,11 +49,11 @@ int main()
 		}
 	}
 
-	size_t meta_mmap = get_mmap_meta_count();
-	size_t data_mmap = get_mmap_data_count();
-	printf("%zu metadata mmap and %zu data mmap\nTotal : %zu mmap\n", meta_mmap, data_mmap, meta_mmap + data_mmap);
+	// size_t meta_mmap = get_mmap_meta_count();
+	// size_t data_mmap = get_mmap_data_count();
+	// printf("%zu metadata mmap and %zu data mmap\nTotal : %zu mmap\n", meta_mmap, data_mmap, meta_mmap + data_mmap);
 
-	show_alloc_mem();
+	// show_alloc_mem();
 	// show_struct_mem_space();
 	// show_alloc_pages();
 	return (0);
