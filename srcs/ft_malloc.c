@@ -158,16 +158,25 @@
 
 void *ft_malloc(size_t size)
 {
-	t_page *page;
-	for (int i = 0; i < 105; i++)
-		page = create_page_metadata();
+	// t_page *page;
+	// for (int i = 0; i < 1; i++)
+	// 	page = create_page_metadata();
 
-	t_block *block;
+	// t_block *block;
 
-	for (int i = 0; i < 140; i++)
-		block = create_block_metadata(page);
-	// printf("Alloc page %p\n", allocate_meta_page(1));
-	// printf("Free metadata space: %p\n", find_free_metadata_space(size));
+	// for (int i = 0; i < 1; i++)
+	// 	block = create_block_metadata(page);
+
+	// allocate_page(1);
+	#if POUET_DEBUG
+	printf("----- Malloc %zu bytes -----\n", size);
+	#endif
+
+	void *ptr = find_or_alloc_space(size);
+
+	// printf("Space: %p\n", ptr);
+	return ptr;
+
 	// t_free_space free_space = find_free_space(size + sizeof(t_block));
 
 	// if (free_space.addr)

@@ -1,8 +1,9 @@
 #include "./ft_malloc.h"
-#include "../libft/libft.h"
+#include <libft.h>
 
 t_malloc_data g_data = { 0 };
 
+size_t g_mmap_meta_count = 0;
 
 t_meta_page *allocate_meta_page(size_t count)
 {
@@ -11,6 +12,8 @@ t_meta_page *allocate_meta_page(size_t count)
 	// allow read/write, private (only this process can see it), anonymous means it's not backed by a file, just for data storage
 	if ((addr = mmap(NULL, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0)) == MAP_FAILED) // we dont care about last 2 args(fd and offset)
 		return NULL;
+
+	g_mmap_meta_count += count;
 
 	t_meta_page *meta_page = (t_meta_page *)addr;
 
@@ -35,6 +38,11 @@ t_meta_page *allocate_meta_page(size_t count)
 	return meta_page;
 }
 
+size_t get_mmap_meta_count()
+{
+	return g_mmap_meta_count;
+}
+
 
 typedef struct s_free_meta_space
 {
@@ -51,21 +59,16 @@ t_free_meta_space find_free_metadata_space(size_t size)
 
 	for (t_meta_page *meta_page = g_data.meta_pages; meta_page != NULL; meta_page = meta_page->next)
 	{
-		// printf("meta page %p %p\n", meta_page->addr, g_data.blocks);
 		char free_space[meta_page->size];
-		for (size_t i = 0; i < meta_page->size; i++)
-		{
-			if (i < sizeof(t_meta_page))
-				free_space[i] = 0; // first sizeof(t_meta_page) bytes are used to store the meta page metadata
-			else
-				free_space[i] = 1;
-		}
+		ft_memset(free_space, 1, meta_page->size);
+		// first sizeof(t_meta_page) bytes are used to store the meta page metadata
+		ft_memset(free_space, 0, sizeof(t_meta_page));
+
 		char *meta_page_start = (char *)meta_page->addr;
 		char *meta_page_end = (char *)meta_page->addr + meta_page->size;
 
 		for (t_page *page = g_data.pages; page != NULL; page = page->next)
 		{
-			// printf("page %p meta page %p\n", page->addr, meta_page->addr);
 			char *page_addr = (char *)page;
 
 			// We need to check every page even if page is not in meta_page, the blocks inside it might be
@@ -82,10 +85,8 @@ t_free_meta_space find_free_metadata_space(size_t size)
 		for (t_block *block = g_data.blocks; block != NULL; block = block->next)
 		{
 			char *block_addr = (char *)block;
-			// printf("Block %p is in meta page %p\n", block_addr, meta_page->addr);
 			if (block_addr >= meta_page_start && block_addr <= meta_page_end)
 			{
-				// printf("inside\n");
 				size_t offset = (char *)block - (char *)meta_page->addr;
 				// block->addr points to the data page, block pointer itself is stored inside meta_page
 				for (size_t i = 0; i < sizeof(t_block); i++)
@@ -123,16 +124,28 @@ t_free_meta_space find_free_metadata_space(size_t size)
 }
 
 
-// This functions simply finds free space for metadata (or mmap more memory if needed) and return an empty metadata t_page
+/**
+ * @brief Create a page metadata object and store it in the metadata pages
+ * Also manages initialization (setting page next if needed).
+ * Also adds the page to the global struct g_data if needed, the caller should not modify it
+ *
+ * @return The address of the created metadata page or NULL on failure
+ */
 t_page *create_page_metadata()
 {
+	#if POUET_DEBUG
 	printf("--- CREATE PAGE METADATA ---\n");
+	#endif
+
 	t_free_meta_space free_space = find_free_metadata_space(sizeof(t_page));
 	t_page *page = NULL;
 
 	if (free_space.addr)
 	{
+		#if POUET_DEBUG
 		printf("There is free space for page at %p (meta page %p)\n", free_space.addr, free_space.meta_page->addr);
+		#endif
+
 		t_meta_page *meta_page = free_space.meta_page;
 		void *addr = free_space.addr;
 		page = (t_page *)addr;
@@ -154,12 +167,23 @@ t_page *create_page_metadata()
 	}
 	else
 	{
+		#if POUET_DEBUG
 		printf("There is no free space, allocating meta page\n");
+		#endif
+
 		t_meta_page *meta_page = allocate_meta_page(1);
+		if (!meta_page)
+		{
+			printf("Failed to allocate meta page\n");
+			return NULL;
+		}
 		// page is empty since we just created it
 		void *addr = (char *)meta_page->addr + sizeof(t_meta_page);
 		page = (t_page *)addr;
+
+		#if POUET_DEBUG
 		printf("Allocated and initialized page at %p (meta page %p)\n", page, meta_page);
+		#endif
 
 		ft_bzero(page, sizeof(t_page));
 
@@ -183,36 +207,98 @@ t_page *create_page_metadata()
 	return page;
 }
 
+t_block *get_last_metadata_block()
+{
+	t_block *last_block = NULL;
+
+	for (t_page *page = g_data.pages; page != NULL; page = page->next)
+	{
+		for (t_block *block = page->first; block != NULL; block = block->next)
+		{
+			last_block = block;
+			if (block == page->last)
+				break;
+		}
+	}
+
+	#if POUET_DEBUG
+	printf("Last metadata block is at address %p\n", last_block ? last_block->addr : NULL);
+	#endif
+
+	return last_block;
+}
+
+/**
+ * @brief Create a block metadata object and store it in the metadata pages.
+ * Also manages initialization (setting page first/last if needed and block prev/next)
+ * Also adds the block to the global struct g_data if needed, the caller should not modify it
+ *
+ * @param page the page in which the block is located
+ * @return The address of the created metadata block or NULL on failure
+ */
 t_block *create_block_metadata(t_page *page)
 {
-	printf("--- CREATE BLOCK METADATA ---\n");
+	#if POUET_DEBUG
+	printf("--- CREATE BLOCK METADATA in page %p ---\n", page->addr);
+	#endif
+
 	t_free_meta_space free_space = find_free_metadata_space(sizeof(t_block));
 	t_block *block = NULL;
 
 	if (free_space.addr)
 	{
+		#if POUET_DEBUG
 		printf("There is free space for block at %p (meta page %p)\n", free_space.addr, free_space.meta_page->addr);
+		#endif
+
 		block = (t_block *)free_space.addr;
 	}
 	else
 	{
+		#if POUET_DEBUG
 		printf("There is no free space, allocating meta page\n");
+		#endif
+
 		t_meta_page *meta_page = allocate_meta_page(1);
+		if (!meta_page)
+		{
+			printf("Failed to allocate meta page\n");
+			return NULL;
+		}
 		// page is empty since we just created it
 		void *addr = (char *)meta_page->addr + sizeof(t_meta_page);
 		block = (t_block *)addr;
+
+		#if POUET_DEBUG
 		printf("Allocated and initialized block at %p (meta page %p)\n", block, meta_page);
+		#endif
 	}
 
 	ft_bzero(block, sizeof(t_block));
 
 	if (!page->first)
 	{
+		#if POUET_DEBUG
+		printf("Page %p is empty, setting block %p as first and last\n", page->addr, block->addr);
+		#endif
+
+		t_block *prev_last = get_last_metadata_block();
+
 		page->first = block;
 		page->last = block;
+
+		if (page != g_data.pages) // if page is not the first one, set the last block of prev page to first of this one
+		{
+			prev_last->next = block; // so that new last is block
+			block->prev = prev_last;
+		}
 	}
 	else
 	{
+		#if POUET_DEBUG
+		printf("Page %p already has a first block, it's %p\n", page->addr, page->first->addr);
+		#endif
+
 		t_block *tmp = page->first;
 		while (tmp != page->last)
 			tmp = tmp->next;

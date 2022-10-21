@@ -23,13 +23,6 @@ typedef struct s_page
 	struct s_page *next;
 } t_page;
 
-typedef struct s_free_space
-{
-	t_page *page;
-	t_block *prev_block;
-	void *addr;
-} t_free_space;
-
 typedef struct s_meta_page // used to store malloced pages/blocks
 {
 	void *addr; // address of page (addr[0] = this struct)
@@ -69,6 +62,10 @@ extern t_malloc_data g_data;
 
 t_page *create_page_metadata();
 t_block *create_block_metadata(t_page *page);
+size_t get_mmap_meta_count();
+size_t get_mmap_data_count();
+t_page *allocate_page(size_t count);
+void *find_or_alloc_space(size_t size);
 
 
 void *ft_malloc(size_t size);
