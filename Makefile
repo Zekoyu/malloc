@@ -15,6 +15,8 @@ CC = gcc
 
 CFLAGS = -g -I$(LIBFT_FOLDER) # -Wall -Wextra -Werror
 
+OS := $(shell uname)
+
 SHELL = zsh
 
 AQUA = \033[0;96m
@@ -46,7 +48,19 @@ $(NAME):	$(LIBFT) $(OBJS)
 # https://stackoverflow.com/questions/3821916/how-to-merge-two-ar-static-libraries-into-one
 # merge libmalloc and libft into libmalloc
 	@echo "$(PURPLE)Merging ($(PURPLE)$(NAME) $(LIBFT)) into $(PURPLE_BOLD)$(NAME)$(RESET)"
-	@libtool -static -o $(NAME) $(NAME) $(LIBFT) 2> /dev/null
+
+	@if [ $(OS) = "Darwin" ]; then \
+	libtool -static -o $(NAME) $(NAME) $(LIBFT) ;\
+	fi
+
+	@if [ $(OS) = "Linux" ]; then \
+	mkdir tmp ;\
+	ar x --output tmp $(LIBFT) ;\
+	ar x --output tmp $(NAME) ;\
+	ar rc $(NAME) tmp/*.o ;\
+	rm -rf tmp ;\
+	fi
+
 	@echo "$(AQUA)Creating symlink ($(AQUA_BOLD)libft_malloc.so $(AQUA)-> $(AQUA_BOLD)$(NAME)$(AQUA))$(RESET)"
 	@ln -s -f ./$(NAME) ./libft_malloc.so
 	@echo "$(GREEN_BOLD)Done compiling $(GREEN_UNDERLINE)$(NAME)$(RESET)"
@@ -55,7 +69,7 @@ all:		$(NAME)
 
 test: $(NAME) main.o
 	@echo
-	@$(CC) $(CFLAGS) -lft_malloc -L./ main.c -o test
+	@$(CC) $(CFLAGS) main.c -lft_malloc -L./ -o test
 	@echo "$(GREEN_BOLD)Done compiling $(GREEN_UNDERLINE)test$(RESET)"
 
 $(LIBFT):
