@@ -92,7 +92,6 @@ t_free_meta_space find_free_metadata_space(size_t size)
 				for (size_t i = 0; i < sizeof(t_block); i++)
 					free_space[i + offset] = 0;
 			}
-
 		}
 
 		// printf("[");
@@ -163,6 +162,16 @@ t_page *create_page_metadata()
 			while (tmp->next)
 				tmp = tmp->next;
 			tmp->next = page;
+		}
+
+		if (g_data.pages)
+		{
+			t_page *tmp = g_data.pages;
+			while (tmp->next)
+				tmp = tmp->next;
+			// in case the page is not in the same meta_page as the previous page
+			if (tmp != page && tmp->next != page)
+				tmp->next = page;
 		}
 	}
 	else
@@ -316,14 +325,80 @@ t_block *create_block_metadata(t_page *page)
 }
 
 
+// returns total bytes of type
+size_t show_alloc_mem_of_type(enum e_page_type type)
+{
+	size_t total = 0;
+
+	for (t_page *page = g_data.pages; page != NULL; page = page->next)
+	{
+		if (page->type != type)
+			continue;
+
+		for (t_block *block = page->first; block != NULL; block = block->next)
+		{
+			total += block->size;
+			printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->size, block->size);
+
+			if (block == page->last)
+				break;
+		}
+	}
+
+	return total;
+}
+
+void *get_first_addr_of_page_type(enum e_page_type type)
+{
+	for (t_page *page = g_data.pages; page != NULL; page = page->next)
+	{
+		if (page->type != type)
+			continue;
+
+		return page->addr;
+	}
+
+	return NULL;
+}
+
 void show_alloc_mem()
 {
 	size_t total_bytes = 0;
-	for (t_block *block = g_data.blocks; block != NULL; block = block->next)
+
+	void *tiny_addr = get_first_addr_of_page_type(E_PAGE_TYPE_TINY);
+	void *small_addr = get_first_addr_of_page_type(E_PAGE_TYPE_SMALL);
+	void *large_addr = get_first_addr_of_page_type(E_PAGE_TYPE_LARGE);
+
+	if (tiny_addr)
 	{
-		total_bytes += block->size;
-		printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->size, block->size);
+		printf("TINY : %p\n", tiny_addr);
+		total_bytes += show_alloc_mem_of_type(E_PAGE_TYPE_TINY);
 	}
+	else
+	{
+		printf("TINY : None\n");
+	}
+
+	if (small_addr)
+	{
+		printf("SMALL : %p\n", small_addr);
+		total_bytes += show_alloc_mem_of_type(E_PAGE_TYPE_SMALL);
+	}
+	else
+	{
+		printf("SMALL : None\n");
+	}
+
+	if (large_addr)
+	{
+		printf("LARGE : %p\n", large_addr);
+		total_bytes += show_alloc_mem_of_type(E_PAGE_TYPE_LARGE);
+	}
+	else
+	{
+		printf("LARGE : None\n");
+	}
+
 	printf("Total : %zu bytes\n", total_bytes);
 }
 
@@ -332,6 +407,6 @@ void show_alloc_pages()
 {
 	for (t_page *page = g_data.pages; page != NULL; page = page->next)
 	{
-		printf("Page %p, first block: %p, last block: %p\n", page->addr, page->first ? page->first->addr : NULL, page->last ? page->last->addr : NULL);
+		printf("Page %p (size %zu), first block: %p, last block: %p\n", page->addr, page->size, page->first ? page->first->addr : NULL, page->last ? page->last->addr : NULL);
 	}
 }

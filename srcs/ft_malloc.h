@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+
+#define TINY_FT_MALLOC_MAX_SIZE 1024
+#define SMALL_FT_MALLOC_MAX_SIZE 4096
+
 typedef struct s_block
 {
 	void *addr;
@@ -14,12 +18,20 @@ typedef struct s_block
 	struct s_block *prev; // keep prev in case of free so that we can easily remove it without traversing the whole chained list
 } t_block;
 
+enum e_page_type
+{
+	E_PAGE_TYPE_TINY,
+	E_PAGE_TYPE_SMALL,
+	E_PAGE_TYPE_LARGE
+};
+
 typedef struct s_page
 {
 	void *addr;
 	t_block *first; // first block of page
 	t_block *last; // last block of page
 	size_t size;
+	enum e_page_type type;
 	struct s_page *next;
 } t_page;
 
@@ -64,8 +76,7 @@ t_page *create_page_metadata();
 t_block *create_block_metadata(t_page *page);
 size_t get_mmap_meta_count();
 size_t get_mmap_data_count();
-t_page *allocate_page(size_t count);
-void *find_or_alloc_space(size_t size);
+void *find_or_alloc_space(size_t size, enum e_page_type type);
 
 
 void *ft_malloc(size_t size);

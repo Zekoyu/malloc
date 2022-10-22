@@ -3,7 +3,7 @@
 
 size_t g_mmap_data_count = 0;
 
-t_page *allocate_page(size_t count)
+t_page *allocate_page(size_t count, enum e_page_type type)
 {
 	void *addr;
 	size_t alloc_size = count * getpagesize();
@@ -22,6 +22,7 @@ t_page *allocate_page(size_t count)
 
 	page->addr = addr;
 	page->size = alloc_size;
+	page->type = type;
 
 	return page;
 }
@@ -37,12 +38,15 @@ typedef struct s_free_space
 	void *addr;
 } t_free_space;
 
-t_free_space find_free_space(size_t size)
+t_free_space find_free_space(size_t size, enum e_page_type type)
 {
 	t_free_space free_data_space = { 0 };
 
 	for (t_page *page = g_data.pages; page != NULL; page = page->next)
 	{
+		if (page->type != type)
+			continue;
+
 		// - Check if no blocks
 		// - Check before first block
 		// - Check in between blocks
@@ -107,9 +111,9 @@ t_block *allocate_block(void *data_addr, size_t block_size, t_page *page)
 	return block;
 }
 
-void *find_or_alloc_space(size_t size)
+void *find_or_alloc_space(size_t size, enum e_page_type type)
 {
-	t_free_space free_space = find_free_space(size);
+	t_free_space free_space = find_free_space(size, type);
 	t_block *block = NULL;
 
 	if (free_space.addr)
@@ -119,6 +123,7 @@ void *find_or_alloc_space(size_t size)
 		#endif
 
 		block = allocate_block(free_space.addr, size, free_space.page);
+
 		if (!block)
 			return NULL;
 	}
@@ -128,8 +133,25 @@ void *find_or_alloc_space(size_t size)
 		printf("There is no space for %zu bytes malloc, allocating now\n", size);
 		#endif
 
-		size_t page_count = size / 4096 + (size % 4096 ? 1 : 0); // round up
-	 	t_page *page = allocate_page(page_count);
+		size_t page_count;
+		int page_size = getpagesize();
+
+		if (type == E_PAGE_TYPE_TINY)
+		{
+			size_t alloc_size = TINY_FT_MALLOC_MAX_SIZE * 100;
+			page_count = alloc_size / page_size + (alloc_size % page_size ? 1 : 0); // round up
+		}
+		else if (type == E_PAGE_TYPE_SMALL)
+		{
+			size_t alloc_size = SMALL_FT_MALLOC_MAX_SIZE * 100;
+			page_count = alloc_size / page_size + (alloc_size % page_size ? 1 : 0);
+		}
+		else
+		{
+			page_count = size / page_size + (size % page_size ? 1 : 0);
+		}
+
+	 	t_page *page = allocate_page(page_count, type);
 
 		if (!page)
 		{
@@ -145,9 +167,6 @@ void *find_or_alloc_space(size_t size)
 		if (!block)
 			return NULL;
 	}
-
-	if (!block)
-		return NULL;
 
 	return (block->addr);
 }

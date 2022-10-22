@@ -13,7 +13,7 @@ NAME := libft_malloc_$(HOSTTYPE).so
 
 CC = gcc
 
-CFLAGS = -g -I$(LIBFT_FOLDER) # -Wall -Wextra -Werror
+CFLAGS = -I$(LIBFT_FOLDER) -O3 # -g # -Wall -Wextra -Werror
 
 OS := $(shell uname)
 
