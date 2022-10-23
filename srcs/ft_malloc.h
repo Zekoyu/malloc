@@ -80,6 +80,7 @@ void *find_or_alloc_space(size_t size, enum e_page_type type);
 
 
 void *ft_malloc(size_t size);
+void *ft_realloc(void *ptr, size_t size);
 void show_alloc_mem();
 void show_struct_mem_space();
 void show_alloc_pages();
