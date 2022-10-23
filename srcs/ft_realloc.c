@@ -12,22 +12,31 @@ void *ft_realloc(void *ptr, size_t size)
 		return NULL;
 	}
 
-	for (t_block *block = g_data.blocks; block != NULL; block = block->next)
+	for (t_page *page = g_data.pages; page != NULL; page = page->next)
 	{
-		if (block->addr == ptr)
+
+		for (t_block *block = page->first; block != NULL; block = block->next)
 		{
-			if (block->size >= size)
+			if (block->addr == ptr)
 			{
-				block->size = size;
-				return ptr;
+				if (block->size >= size)
+				{
+					block->size = size;
+					return ptr;
+				}
+				else
+				{
+					// size_t available_after_block = page->size - ((char *)block->addr - (char *)page->addr) - block->size;
+
+					void *new_ptr = ft_malloc(size);
+					ft_memcpy(new_ptr, ptr, block->size);
+					ft_free(ptr);
+					return new_ptr;
+				}
 			}
-			else
-			{
-				void *new_ptr = ft_malloc(size);
-				ft_memcpy(new_ptr, ptr, block->size);
-				ft_free(ptr);
-				return new_ptr;
-			}
+
+			if (block == page->last)
+				break;
 		}
 	}
 

@@ -1,5 +1,7 @@
 #include "./srcs/ft_malloc.h"
-#include "./libft/libft.h"
+// #include "./libft/libft.h"
+#include <unistd.h>
+#include <stdio.h>
 
 #define POUET_DEBUG 0
 
@@ -29,10 +31,16 @@ int main()
 	// pouet = ft_malloc(3000);
 	// pouet = ft_malloc(25);
 
-	printf("%zu\n", sizeof(t_tg) * 3);
+	printf("Start test\n");
 	for (int j = 0; j < 1024; j++)
 	{
-		ft_malloc(1024);
+		void *test = ft_malloc(1024);
+		printf("Malloc'ed address is %p\n", test);
+		test = ft_realloc(test, 512);
+		printf("Realloc'ed smaller address is %p\n", test);
+		test = ft_realloc(test, 2048);
+		printf("Realloc'ed bigger address is %p\n", test);
+		ft_free(test);
 		// t_tg	*oui;
 
 		// oui = malloc(sizeof(t_tg) * 3);
