@@ -60,7 +60,7 @@ t_free_space find_free_space(size_t size, enum e_page_type type)
 		}
 
 		size_t free_before_first_block = ((char *)page->first->addr - (char *)page->addr);
-		if (free_before_first_block >= size)
+		if (page->first != NULL && free_before_first_block >= size)
 		{
 			free_data_space.addr = page->addr;
 			free_data_space.page = page;
@@ -71,7 +71,7 @@ t_free_space find_free_space(size_t size, enum e_page_type type)
 		{
 			size_t free_space = (char *)block->next->addr - ((char *)block->addr + block->size);
 
-			if (free_space >= size)
+			if (free_space >= size && block->next->addr >= page->addr && (char *)block->next->addr + block->next->size < (char *)page->addr + page->size)
 			{
 				free_data_space.addr = (char *)block->addr + block->size;
 				free_data_space.page = page;

@@ -35,7 +35,7 @@ int main()
 
 	srand(time(NULL));
 
-	for (int j = 0; j < 200; j++)
+	for (int j = 0; j < 4; j++)
 	{
 
 		int r = rand() % 4;
