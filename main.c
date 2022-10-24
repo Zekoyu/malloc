@@ -2,6 +2,8 @@
 // #include "./libft/libft.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define POUET_DEBUG 0
 
@@ -31,16 +33,35 @@ int main()
 	// pouet = ft_malloc(3000);
 	// pouet = ft_malloc(25);
 
-	printf("Start test\n");
-	for (int j = 0; j < 1024; j++)
+	srand(time(NULL));
+
+	for (int j = 0; j < 200; j++)
 	{
+
+		int r = rand() % 4;
+
+		void *pouic = NULL;
+
+		if (r == 0)
+			pouic = ft_malloc(1024);
+		else if (r == 1)
+			pouic = ft_malloc(2048);
+		else if (r == 2)
+			pouic = ft_malloc(12345);
+		else
+			pouic = NULL;
+
 		void *test = ft_malloc(1024);
-		printf("Malloc'ed address is %p\n", test);
-		test = ft_realloc(test, 512);
-		printf("Realloc'ed smaller address is %p\n", test);
-		test = ft_realloc(test, 2048);
-		printf("Realloc'ed bigger address is %p\n", test);
-		ft_free(test);
+		void *test2 = ft_malloc(2048);
+		void *test3 = ft_malloc(12345);
+
+		ft_free(pouic);
+		// printf("Malloc'ed address is %p\n", test);
+		// test = ft_realloc(test, 512);
+		// printf("Realloc'ed smaller address is %p\n", test);
+		// test = ft_realloc(test, 2048);
+		// printf("Realloc'ed bigger address is %p\n", test);
+		// ft_free(test);
 		// t_tg	*oui;
 
 		// oui = malloc(sizeof(t_tg) * 3);
@@ -63,7 +84,7 @@ int main()
 	// printf("%zu metadata mmap and %zu data mmap\nTotal : %zu mmap\n", meta_mmap, data_mmap, meta_mmap + data_mmap);
 
 	// show_alloc_pages();
-	// show_alloc_mem();
+	show_alloc_mem();
 	// show_struct_mem_space();
 	// show_alloc_pages();
 	return (0);

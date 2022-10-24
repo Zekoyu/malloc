@@ -162,6 +162,7 @@ t_page *create_page_metadata()
 			while (tmp->next)
 				tmp = tmp->next;
 			tmp->next = page;
+			meta_page->last_page = page;
 		}
 
 		if (g_data.pages)
@@ -291,16 +292,24 @@ t_block *create_block_metadata(t_page *page)
 		printf("Page %p is empty, setting block %p as first and last\n", page->addr, block->addr);
 		#endif
 
-		t_block *prev_last = get_last_metadata_block();
+		t_block *prev_last = NULL;
+
+		for (t_page *tmp = g_data.pages; tmp != NULL; tmp = tmp->next)
+		{
+			// get last of previous page
+			if (tmp->next == page)
+			{
+				prev_last = tmp->last; // should always be one because otherwise we would have found free space on this previous page
+				break;
+			}
+		}
 
 		page->first = block;
 		page->last = block;
 
-		if (page != g_data.pages) // if page is not the first one, set the last block of prev page to first of this one
-		{
-			prev_last->next = block; // so that new last is block
-			block->prev = prev_last;
-		}
+		if (prev_last)
+			prev_last->next = block;
+		block->prev = prev_last;
 	}
 	else
 	{
@@ -315,6 +324,8 @@ t_block *create_block_metadata(t_page *page)
 		tmp->next = block;
 		block->prev = tmp;
 		block->next = last_next;
+		if (block->next)
+			block->next->prev = block;
 		page->last = block;
 	}
 
