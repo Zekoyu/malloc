@@ -108,6 +108,49 @@ t_block *allocate_block(void *data_addr, size_t block_size, t_page *page)
 	block->addr = data_addr;
 	block->size = block_size;
 
+	/* pouet -> page_block -> pouet2 */
+	/* pouet -> block -> page_block -> pouet2 */
+
+
+	/* page_block -> block -> NULL */
+	/* block -> page_block -> NULL*/
+
+	// Keep blocks in the right order
+	// By default block is at the end of the page (so block->next is another page)
+	for (t_block *page_block = page->first; page_block != NULL; page_block = page_block->next)
+	{
+		// insert block before page_block to keep blocks address ordered
+		if (page_block->addr > block->addr)
+		{
+			if (block->prev)
+				block->prev->next = block->next;
+
+			block->next = page_block;
+			block->prev = page_block->prev;
+
+			page_block->prev = block;
+
+			if (page_block == page->first)
+				page->first = block;
+
+			if (block->prev)
+				block->prev->next = block;
+			else
+			{
+				page->first = block;
+				g_data.blocks = block;
+			}
+
+			break;
+		}
+
+		if (page_block == page->last)
+		{
+			// By default the block is the last one of page
+			break;
+		}
+	}
+
 	return block;
 }
 

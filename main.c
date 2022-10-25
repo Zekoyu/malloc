@@ -35,10 +35,11 @@ int main()
 
 	srand(time(NULL));
 
-	for (int j = 0; j < 4; j++)
+	for (int j = 0; j < 120; j++)
 	{
 
 		int r = rand() % 4;
+		// r = j % 4;
 
 		void *pouic = NULL;
 
@@ -56,6 +57,9 @@ int main()
 		void *test3 = ft_malloc(12345);
 
 		ft_free(pouic);
+		// printf("-----------------\n");
+		// printf("Freed address %p (r = %d)\n", pouic, r);
+		// show_alloc_mem();
 		// printf("Malloc'ed address is %p\n", test);
 		// test = ft_realloc(test, 512);
 		// printf("Realloc'ed smaller address is %p\n", test);
