@@ -33,6 +33,8 @@ int is_same_size_category(t_find_block_data data, size_t new_size)
 
 void *ft_realloc(void *ptr, size_t size)
 {
+	return ft_malloc(size);
+
 	if (ptr == NULL)
 		return ft_malloc(size);
 
@@ -50,6 +52,17 @@ void *ft_realloc(void *ptr, size_t size)
 
 	if (data.block == NULL)
 		return NULL;
+
+	void *new = ft_malloc(size);
+	if (new == NULL)
+		return NULL;
+
+	size_t original_size = data.block->real_size - sizeof(t_block);
+	for (size_t i = 0; i < original_size; i++)
+		((char *)new)[i] = '0';
+	// ft_memcpy(new, ptr, original_size);
+	ft_free(ptr);
+	return new;
 
 	if (!is_same_size_category(data, size))
 	{
@@ -79,7 +92,7 @@ void *ft_realloc(void *ptr, size_t size)
 		max_possible_block_size = (char *)block->next - (char *)block;
 	else
 		// page->addr is the same as page
-		max_possible_block_size = ((char *)page->addr + page->real_size) - (char *)block;
+		max_possible_block_size = ((char *)page + page->real_size) - (char *)block;
 
 	if (size + sizeof(t_block) <= max_possible_block_size)
 	{

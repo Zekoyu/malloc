@@ -1,6 +1,13 @@
 #include <libft.h>
 #include "./ft_malloc.h"
 
+size_t g_mmap_pages_count = 0;
+
+size_t get_mmap_pages_count()
+{
+	return g_mmap_pages_count;
+}
+
 /**
  * @brief Creates a new page with the specified size, sets it's metadata and returns it.
  *
@@ -18,9 +25,11 @@ t_page *add_new_page(size_t size, t_page **pages)
 	if ((addr = mmap(NULL, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0)) == MAP_FAILED) // we dont care about last 2 args(fd and offset)
 		return NULL;
 
+	printf("Allocated %p for %lx bytes (end is %p)\n", addr, alloc_size, (char *)addr + alloc_size);
+	g_mmap_pages_count += alloc_size / page_size;
+
 	t_page *page = (t_page *)addr;
 	ft_bzero(page, sizeof(t_page));
-	page->addr = addr;
 	page->real_size = alloc_size;
 
 	if (!*pages)
@@ -59,9 +68,9 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 				continue;
 
 			// create block at the start of page (first sizeof(t_page) bytes are reserved for page metadata)
-			t_block *block = (t_block *)((char *)page->addr + sizeof(t_page));
+			t_block *block = (t_block *)((char *)page + sizeof(t_page));
 			ft_bzero(block, sizeof(t_block));
-			block->addr = (void *)((char *)block + sizeof(t_block));
+			block->addr = (char *)block + sizeof(t_block);
 			block->real_size = real_block_size;
 			page->first = block;
 			page->last = block;
@@ -79,7 +88,7 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			return block;
 		}
 
-		char *page_start_usable_addr = (char *)page->addr + sizeof(t_page);
+		char *page_start_usable_addr = (char *)page + sizeof(t_page);
 
 		size_t free_before_first_block = (char *)page->first->addr - page_start_usable_addr;
 		if (free_before_first_block >= real_block_size)
@@ -87,22 +96,17 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			// sizeof(something) is always aligned so no need to check
 			t_block *block = (t_block *)page_start_usable_addr;
 			ft_bzero(block, sizeof(t_block));
-			block->addr = (void *)((char *)block + sizeof(t_block));
+			block->addr = (char *)block + sizeof(t_block);
 			block->real_size = real_block_size;
 			block->next = page->first;
 			if (page->first)
-				page->first->prev = block;
-			page->first = block;
-
-			for (t_page *tmp = page->prev; tmp != NULL; tmp = tmp->prev)
 			{
-				if (tmp->last)
-				{
-					tmp->last->next = block;
-					block->prev = tmp->last;
-					break;
-				}
+				block->prev = page->first->prev;
+				if (page->first->prev)
+					page->first->prev->next = block;
+				page->first->prev = block;
 			}
+			page->first = block;
 
 			return block;
 		}
@@ -118,7 +122,7 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			{
 				t_block *new_block = (t_block *)((char *)block + block->real_size + alignment_offset);
 				ft_bzero(new_block, sizeof(t_block));
-				new_block->addr = (void *)((char *)new_block + sizeof(t_block));
+				new_block->addr = (char *)new_block + sizeof(t_block);
 				new_block->real_size = real_block_size;
 				new_block->next = block->next;
 				new_block->prev = block;
@@ -129,14 +133,17 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 		}
 
 		size_t alignment_offset = page->last->real_size % 8 == 0 ? 0 : 8 - page->last->real_size % 8;
-		size_t free_after_last_block = (char *)page->addr + page->real_size - ((char *)page->last + page->last->real_size + alignment_offset);
+		size_t free_after_last_block = ((char *)page + page->real_size) - ((char *)page->last + page->last->real_size + alignment_offset);
 		if (free_after_last_block >= real_block_size)
 		{
 			t_block *block = (t_block *)((char *)page->last + page->last->real_size + alignment_offset);
 			ft_bzero(block, sizeof(t_block));
-			block->addr = (void *)((char *)block + sizeof(t_block));
+			block->addr = (char *)block + sizeof(t_block);
 			block->real_size = real_block_size;
 			block->prev = page->last;
+			block->next = page->last->next;
+			if (page->last->next)
+				page->last->next->prev = block;
 			page->last->next = block;
 			page->last = block;
 			return block;
@@ -183,7 +190,7 @@ t_block *allocate_block(size_t size, t_page **pages)
 		return NULL;
 	}
 
-	new_block = (t_block *)((char *)new_page->addr + sizeof(t_page));
+	new_block = (t_block *)((char *)new_page + sizeof(t_page));
 	ft_bzero(new_block, sizeof(t_block));
 	new_block->addr = (void *)((char *)new_block + sizeof(t_block));
 	new_block->real_size = size + sizeof(t_block);
@@ -213,18 +220,22 @@ t_block *allocate_block(size_t size, t_page **pages)
 size_t print_alloc_mem_in_pages(t_page *pages)
 {
 	size_t total_bytes = 0;
+	size_t total_allocs = 0;
 
 	for (t_page *page = pages; page != NULL; page = page->next)
 	{
 		for (t_block *block = page->first; block != NULL; block = block->next)
 		{
 			total_bytes += block->real_size - sizeof(t_block);
+			total_allocs++;
 
 			printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->real_size - sizeof(t_block), block->real_size - sizeof(t_block));
 			if (block == page->last)
 				break;
 		}
 	}
+
+	printf("Total allocations : %zu (%zu bytes)\n", total_allocs, total_bytes);
 
 	return total_bytes;
 }

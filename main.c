@@ -36,11 +36,11 @@ int main()
 
 	srand(time(NULL));
 
-	for (int j = 0; j < 100; j++)
+	for (int j = 0; j < 2000; j++)
 	{
 
 		int r = rand() % 4;
-		// r = j % 4;
+		r = (j + 1) % 4;
 
 		void *pouic = NULL;
 
@@ -63,6 +63,7 @@ int main()
 			pouic = NULL;
 
 		int r2 = rand() % 3;
+		r2 = j % 3;
 		if (r2 == 1)
 		{
 			if (r == 1)
@@ -136,6 +137,7 @@ int main()
 
 	// show_alloc_pages();
 	show_alloc_mem();
+	printf("Total pages requested: %zu\n", get_mmap_pages_count());
 
 
 

@@ -18,7 +18,6 @@ typedef struct s_block
 
 typedef struct s_page
 {
-	void *addr;
 	size_t real_size;
 	struct s_page *next;
 	struct s_page *prev;
@@ -49,5 +48,6 @@ void *ft_malloc(size_t size);
 void *ft_realloc(void *ptr, size_t size);
 void ft_free(void *ptr);
 void show_alloc_mem();
+size_t get_mmap_pages_count();
 
 #endif
