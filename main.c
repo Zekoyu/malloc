@@ -28,6 +28,7 @@ typedef struct s_test
 int main()
 {
 	void *pouet;
+	size_t malloc_total = 0;
 
 	// pouet = ft_malloc(2060);
 	// pouet = ft_malloc(3000);
@@ -39,7 +40,7 @@ int main()
 	{
 
 		int r = rand() % 4;
-		// r = j % 4;
+		r = j % 4;
 
 		void *pouic = NULL;
 
@@ -53,8 +54,15 @@ int main()
 			pouic = NULL;
 
 		void *test = ft_malloc(1024);
-		void *test2 = ft_malloc(2048);
-		void *test3 = ft_malloc(12345);
+		malloc_total += 1024;
+
+		((char *)test)[0] = '0';
+		if (pouic)
+			((char *)pouic)[100] = '1';
+		// void *test2 = ft_malloc(2048);
+		// void *test3 = ft_malloc(12345);
+
+		// malloc_total += 1024 + 2048 + 12345;
 
 		ft_free(pouic);
 		// printf("-----------------\n");
@@ -89,6 +97,7 @@ int main()
 
 	// show_alloc_pages();
 	show_alloc_mem();
+	printf("main malloc total is %zu\n", malloc_total);
 	// show_struct_mem_space();
 	// show_alloc_pages();
 	return (0);

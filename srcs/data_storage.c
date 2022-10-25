@@ -1,217 +1,159 @@
-#include "./ft_malloc.h"
 #include <libft.h>
+#include "./ft_malloc.h"
 
-size_t g_mmap_data_count = 0;
-
-t_page *allocate_page(size_t count, enum e_page_type type)
+/**
+ * @brief Creates a new page with the specified size, sets it's metadata and returns it.
+ *
+ * @param size the size of the page to create (will be rounded up to the nearest multiple of getpagesize())
+ * @param pages the page list in which to store the new page
+ * @return t_page*
+ */
+t_page *add_new_page(size_t size, t_page **pages)
 {
 	void *addr;
-	size_t alloc_size = count * getpagesize();
+
+	size_t page_size = getpagesize();
+	size_t alloc_size = size / page_size * page_size + (size % page_size == 0 ? 0 : page_size);
 
 	if ((addr = mmap(NULL, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0)) == MAP_FAILED) // we dont care about last 2 args(fd and offset)
 		return NULL;
 
-	t_page *page;
-	if ((page = create_page_metadata()) == NULL)
-	{
-		munmap(addr, alloc_size);
-		return NULL;
-	}
-
-	g_mmap_data_count += count;
-
+	t_page *page = (t_page *)addr;
+	ft_bzero(page, sizeof(t_page));
 	page->addr = addr;
-	page->size = alloc_size;
-	page->type = type;
+	page->real_size = alloc_size;
+
+	if (!*pages)
+		*pages = page;
+	else
+	{
+		t_page *tmp = *pages;
+		while (tmp->next)
+			tmp = tmp->next;
+		tmp->next = page;
+	}
 
 	return page;
 }
 
-size_t get_mmap_data_count()
+/**
+ * @brief Find free space in the given pages and create a block if found(until page == NULL)
+ *
+ * @param size size of free space needed
+ * @param pages the pages in which to search (linked list)
+ * @return t_block * the newly created block
+ * @return NULL if no free space found
+ */
+t_block *create_block_if_space(size_t size, t_page *pages)
 {
-	return g_mmap_data_count;
-}
+	size_t real_block_size = size + sizeof(t_block);
 
-typedef struct s_free_space
-{
-	t_page *page;
-	void *addr;
-} t_free_space;
-
-t_free_space find_free_space(size_t size, enum e_page_type type)
-{
-	t_free_space free_data_space = { 0 };
-
-	for (t_page *page = g_data.pages; page != NULL; page = page->next)
+	for (t_page *page = pages; page != NULL; page = page->next)
 	{
-		if (page->type != type)
-			continue;
-
-		// - Check if no blocks
-		// - Check before first block
-		// - Check in between blocks
-		// - Check after last block
-
-		if (!page->first && size <= page->size)
+		if (!page->first)
 		{
-			free_data_space.addr = page->addr;
-			free_data_space.page = page;
-			return free_data_space;
+			if (page->real_size - sizeof(t_page) < real_block_size)
+				continue;
+
+			// create block at the start of page (first sizeof(t_page) bytes are reserved for page metadata)
+			t_block *block = (t_block *)((char *)page->addr + sizeof(t_page));
+			ft_bzero(block, sizeof(t_block));
+			block->addr = (void *)((char *)block + sizeof(t_block));
+			block->real_size = real_block_size;
+			page->first = block;
+			return block;
 		}
 
-		size_t free_before_first_block = ((char *)page->first->addr - (char *)page->addr);
-		if (page->first != NULL && free_before_first_block >= size)
+		char *page_start_usable_addr = (char *)page->addr + sizeof(t_page);
+
+		size_t free_before_first_block = (char *)page->first->addr - page_start_usable_addr;
+		if (free_before_first_block >= real_block_size)
 		{
-			free_data_space.addr = page->addr;
-			free_data_space.page = page;
-			return free_data_space;
+			t_block *block = (t_block *)page_start_usable_addr;
+			ft_bzero(block, sizeof(t_block));
+			block->addr = (void *)((char *)block + sizeof(t_block));
+			block->real_size = real_block_size;
+			block->next = page->first;
+			if (page->first)
+				page->first->prev = block;
+			page->first = block;
+			return block;
 		}
 
-		for (t_block *block = page->first; block->next != NULL; block = block->next)
+		for (t_block *block = page->first; block->next != NULL && block != page->last; block = block->next)
 		{
-			size_t free_space = (char *)block->next->addr - ((char *)block->addr + block->size);
+			size_t free_between_blocks = (char *)block->next - ((char *)block + block->real_size);
 
-			if (free_space >= size && block->next->addr >= page->addr && (char *)block->next->addr + block->next->size < (char *)page->addr + page->size)
+			if (free_between_blocks >= real_block_size)
 			{
-				free_data_space.addr = (char *)block->addr + block->size;
-				free_data_space.page = page;
-				return free_data_space;
+				t_block *new_block = (t_block *)((char *)block + block->real_size);
+				ft_bzero(new_block, sizeof(t_block));
+				new_block->addr = (void *)((char *)new_block + sizeof(t_block));
+				new_block->real_size = real_block_size;
+				new_block->next = block->next;
+				new_block->prev = block;
+				block->next->prev = new_block;
+				block->next = new_block;
+				return new_block;
 			}
-
-			if (block->next == page->last)
-				break;
 		}
 
-		size_t free_after_last_block = ((char *)page->addr + page->size) - ((char *)page->last->addr + page->last->size);
-		if (free_after_last_block >= size)
+		size_t free_after_last_block = (char *)page->addr + page->real_size - ((char *)page->last + page->last->real_size);
+		if (free_after_last_block >= real_block_size)
 		{
-			free_data_space.addr = (char *)page->last->addr + page->last->size;
-			free_data_space.page = page;
-			return free_data_space;
+			t_block *block = (t_block *)((char *)page->last + page->last->real_size);
+			ft_bzero(block, sizeof(t_block));
+			block->addr = (void *)((char *)block + sizeof(t_block));
+			block->real_size = real_block_size;
+			block->prev = page->last;
+			page->last->next = block;
+			page->last = block;
+			return block;
 		}
 	}
 
-	return free_data_space;
+	return NULL;
 }
 
-t_block *allocate_block(void *data_addr, size_t block_size, t_page *page)
+/**
+ * @brief Either creates a new page or finds a page with enough free space and creates a block in it.
+ *
+ * @param size size of the block to create
+ * @param pages the pages in which to search for free space and add the block
+ * @return t_block *the addres of the newly created block
+ */
+t_block *allocate_block(size_t size, t_page **pages)
 {
-	#if POUET_DEBUG
-	printf("Allocate block at %p\n", data_addr);
-	#endif
+	t_block *new_block;
 
-	t_block *block;
+	new_block = create_block_if_space(size, *pages);
 
-	if ((block = create_block_metadata(page)) == NULL)
+	if (new_block)
+		return new_block;
+
+	int page_size = getpagesize();
+	t_page *new_page = NULL;
+
+	// no free space found, allocate new page
+	if (pages == &g_data.tiny_pages)
+		new_page = add_new_page(TINY_FT_MALLOC_MAX_SIZE * 100, pages);
+	else if (pages == &g_data.small_pages)
+		new_page = add_new_page(SMALL_FT_MALLOC_MAX_SIZE * 100, pages);
+	else if (pages == &g_data.large_pages)
+		new_page = add_new_page(size, pages);
+
+	if (!new_page)
+	{
+		printf("Cannot add new page (mmap failed)\n");
 		return NULL;
-
-	block->addr = data_addr;
-	block->size = block_size;
-
-	/* pouet -> page_block -> pouet2 */
-	/* pouet -> block -> page_block -> pouet2 */
-
-
-	/* page_block -> block -> NULL */
-	/* block -> page_block -> NULL*/
-
-	// Keep blocks in the right order
-	// By default block is at the end of the page (so block->next is another page)
-	for (t_block *page_block = page->first; page_block != NULL; page_block = page_block->next)
-	{
-		// insert block before page_block to keep blocks address ordered
-		if (page_block->addr > block->addr)
-		{
-			if (block->prev)
-				block->prev->next = block->next;
-
-			block->next = page_block;
-			block->prev = page_block->prev;
-
-			page_block->prev = block;
-
-			if (page_block == page->first)
-				page->first = block;
-
-			if (block->prev)
-				block->prev->next = block;
-			else
-			{
-				page->first = block;
-				g_data.blocks = block;
-			}
-
-			break;
-		}
-
-		if (page_block == page->last)
-		{
-			// By default the block is the last one of page
-			break;
-		}
 	}
 
-	return block;
+	new_block = (t_block *)((char *)new_page->addr + sizeof(t_page));
+	ft_bzero(new_block, sizeof(t_block));
+	new_block->addr = (void *)((char *)new_block + sizeof(t_block));
+	new_block->real_size = size + sizeof(t_block);
+	new_page->first = new_block;
+	new_page->last = new_block;
+
+	return new_block;
 }
-
-void *find_or_alloc_space(size_t size, enum e_page_type type)
-{
-	t_free_space free_space = find_free_space(size, type);
-	t_block *block = NULL;
-
-	if (free_space.addr)
-	{
-		#if POUET_DEBUG
-		printf("There is already space for %zu bytes malloc at %p\n", size, free_space.addr);
-		#endif
-
-		block = allocate_block(free_space.addr, size, free_space.page);
-
-		if (!block)
-			return NULL;
-	}
-	else
-	{
-		#if POUET_DEBUG
-		printf("There is no space for %zu bytes malloc, allocating now\n", size);
-		#endif
-
-		size_t page_count;
-		int page_size = getpagesize();
-
-		if (type == E_PAGE_TYPE_TINY)
-		{
-			size_t alloc_size = TINY_FT_MALLOC_MAX_SIZE * 100;
-			page_count = alloc_size / page_size + (alloc_size % page_size ? 1 : 0); // round up
-		}
-		else if (type == E_PAGE_TYPE_SMALL)
-		{
-			size_t alloc_size = SMALL_FT_MALLOC_MAX_SIZE * 100;
-			page_count = alloc_size / page_size + (alloc_size % page_size ? 1 : 0);
-		}
-		else
-		{
-			page_count = size / page_size + (size % page_size ? 1 : 0);
-		}
-
-	 	t_page *page = allocate_page(page_count, type);
-
-		if (!page)
-		{
-			printf("Cannot allocate %zu pages\n", page_count);
-			return NULL;
-		}
-
-		#if POUET_DEBUG
-		printf("Putting block of %zu bytes at %p\n", size, page->addr);
-		#endif
-
-		block = allocate_block(page->addr, size, page);
-		if (!block)
-			return NULL;
-	}
-
-	return (block->addr);
-}
-
-

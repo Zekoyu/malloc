@@ -19,9 +19,9 @@ void *ft_realloc(void *ptr, size_t size)
 		{
 			if (block->addr == ptr)
 			{
-				if (block->size >= size)
+				if (block->real_size >= size)
 				{
-					block->size = size;
+					block->real_size = size;
 					return ptr;
 				}
 				else
@@ -29,7 +29,7 @@ void *ft_realloc(void *ptr, size_t size)
 					// size_t available_after_block = page->size - ((char *)block->addr - (char *)page->addr) - block->size;
 
 					void *new_ptr = ft_malloc(size);
-					ft_memcpy(new_ptr, ptr, block->size);
+					ft_memcpy(new_ptr, ptr, block->real_size);
 					ft_free(ptr);
 					return new_ptr;
 				}

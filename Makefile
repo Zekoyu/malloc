@@ -44,7 +44,7 @@ RESET = \033[0m
 $(NAME):	$(LIBFT) $(OBJS)
 	@echo
 	@echo "$(PURPLE)Linking ($(PURPLE)*.o) into $(PURPLE_BOLD)$(NAME)$(RESET)"
-	@ar rc $(NAME) $(OBJS)
+	@ar rcs $(NAME) $(OBJS)
 # https://stackoverflow.com/questions/3821916/how-to-merge-two-ar-static-libraries-into-one
 # merge libmalloc and libft into libmalloc
 	@echo "$(PURPLE)Merging ($(PURPLE)$(NAME) $(LIBFT)) into $(PURPLE_BOLD)$(NAME)$(RESET)"
@@ -57,7 +57,7 @@ $(NAME):	$(LIBFT) $(OBJS)
 	mkdir tmp ;\
 	ar x --output tmp $(LIBFT) ;\
 	ar x --output tmp $(NAME) ;\
-	ar rc $(NAME) tmp/*.o ;\
+	ar rcs $(NAME) tmp/*.o ;\
 	rm -rf tmp ;\
 	fi
 

@@ -81,6 +81,8 @@ t_free_meta_space find_free_metadata_space(size_t size)
 			}
 		}
 
+		t_block *pouet = g_data.blocks;
+
 		// page can be stored on a meta_page and it's block on another, so check every single block and check if it's in meta_page
 		for (t_block *block = g_data.blocks; block != NULL; block = block->next)
 		{
@@ -348,8 +350,8 @@ size_t show_alloc_mem_of_type(enum e_page_type type)
 
 		for (t_block *block = page->first; block != NULL; block = block->next)
 		{
-			total += block->size;
-			printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->size, block->size);
+			total += block->real_size;
+			printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->real_size, block->real_size);
 
 			if (block == page->last)
 				break;
@@ -418,6 +420,6 @@ void show_alloc_pages()
 {
 	for (t_page *page = g_data.pages; page != NULL; page = page->next)
 	{
-		printf("Page %p (size %zu), first block: %p, last block: %p\n", page->addr, page->size, page->first ? page->first->addr : NULL, page->last ? page->last->addr : NULL);
+		printf("Page %p (size %zu), first block: %p, last block: %p\n", page->addr, page->real_size, page->first ? page->first->addr : NULL, page->last ? page->last->addr : NULL);
 	}
 }
