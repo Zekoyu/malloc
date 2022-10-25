@@ -27,8 +27,3 @@ void ft_free(void *ptr)
 {
 	return;
 }
-
-void show_alloc_mem()
-{
-	return;
-}

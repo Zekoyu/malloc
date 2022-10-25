@@ -44,17 +44,17 @@ int main()
 
 		void *pouic = NULL;
 
-		if (r == 0)
-			pouic = ft_malloc(1024);
-		else if (r == 1)
-			pouic = ft_malloc(2048);
-		else if (r == 2)
-			pouic = ft_malloc(12345);
-		else
-			pouic = NULL;
+		// if (r == 0)
+		// 	pouic = ft_malloc(1024);
+		// else if (r == 1)
+		// 	pouic = ft_malloc(2048);
+		// else if (r == 2)
+		// 	pouic = ft_malloc(12345);
+		// else
+		// 	pouic = NULL;
 
-		void *test = ft_malloc(1024);
-		malloc_total += 1024;
+		void *test = ft_malloc(1021);
+		malloc_total += 1021;
 
 		((char *)test)[0] = '0';
 		if (pouic)

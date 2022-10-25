@@ -46,12 +46,14 @@ t_page *add_new_page(size_t size, t_page **pages)
  */
 t_block *create_block_if_space(size_t size, t_page *pages)
 {
+	// real-block size is memory aligned on 8 bytes (see https://en.wikipedia.org/wiki/Data_structure_alignment)
 	size_t real_block_size = size + sizeof(t_block);
 
 	for (t_page *page = pages; page != NULL; page = page->next)
 	{
 		if (!page->first)
 		{
+			// page is always aligned so no need to check
 			if (page->real_size - sizeof(t_page) < real_block_size)
 				continue;
 
@@ -69,6 +71,7 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 		size_t free_before_first_block = (char *)page->first->addr - page_start_usable_addr;
 		if (free_before_first_block >= real_block_size)
 		{
+			// sizeof(something) is always aligned so no need to check
 			t_block *block = (t_block *)page_start_usable_addr;
 			ft_bzero(block, sizeof(t_block));
 			block->addr = (void *)((char *)block + sizeof(t_block));
@@ -82,11 +85,14 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 
 		for (t_block *block = page->first; block->next != NULL && block != page->last; block = block->next)
 		{
-			size_t free_between_blocks = (char *)block->next - ((char *)block + block->real_size);
+			// alignment_offset is the number of  bytes we should add to the address to make it aligned
+
+			size_t alignment_offset = block->real_size % 8 == 0 ? 0 : 8 - block->real_size % 8;
+			size_t free_between_blocks = (char *)block->next - ((char *)block + block->real_size + alignment_offset);
 
 			if (free_between_blocks >= real_block_size)
 			{
-				t_block *new_block = (t_block *)((char *)block + block->real_size);
+				t_block *new_block = (t_block *)((char *)block + block->real_size + alignment_offset);
 				ft_bzero(new_block, sizeof(t_block));
 				new_block->addr = (void *)((char *)new_block + sizeof(t_block));
 				new_block->real_size = real_block_size;
@@ -98,10 +104,11 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			}
 		}
 
-		size_t free_after_last_block = (char *)page->addr + page->real_size - ((char *)page->last + page->last->real_size);
+		size_t alignment_offset = page->last->real_size % 8 == 0 ? 0 : 8 - page->last->real_size % 8;
+		size_t free_after_last_block = (char *)page->addr + page->real_size - ((char *)page->last + page->last->real_size + alignment_offset);
 		if (free_after_last_block >= real_block_size)
 		{
-			t_block *block = (t_block *)((char *)page->last + page->last->real_size);
+			t_block *block = (t_block *)((char *)page->last + page->last->real_size + alignment_offset);
 			ft_bzero(block, sizeof(t_block));
 			block->addr = (void *)((char *)block + sizeof(t_block));
 			block->real_size = real_block_size;
@@ -156,4 +163,49 @@ t_block *allocate_block(size_t size, t_page **pages)
 	new_page->last = new_block;
 
 	return new_block;
+}
+
+/**
+ * @brief Prints the allocated memory addresses and sizes in the given page list
+ *
+ * @param pages the pages in which to search for allocated blocks
+ * @return size_t the sum of all memory blocks in the given pages
+ */
+size_t print_alloc_mem_in_pages(t_page *pages)
+{
+	size_t total_bytes = 0;
+
+	for (t_page *page = pages; page != NULL; page = page->next)
+	{
+		for (t_block *block = page->first; block != NULL; block = block->next)
+		{
+			total_bytes += block->real_size - sizeof(t_block);
+
+			printf("%p - %p : %zu bytes\n", block->addr, (char *)block->addr + block->real_size - sizeof(t_block), block->real_size - sizeof(t_block));
+			if (block == page->last)
+				break;
+		}
+	}
+
+	return total_bytes;
+}
+
+void show_alloc_mem()
+{
+	size_t total_bytes = 0;
+
+	void *tiny_addr = g_data.tiny_pages;
+	void *small_addr = g_data.small_pages;
+	void *large_addr = g_data.large_pages;
+
+	printf("TINY : %p\n", tiny_addr);
+	total_bytes += print_alloc_mem_in_pages(g_data.tiny_pages);
+
+	printf("SMALL : %p\n", small_addr);
+	total_bytes += print_alloc_mem_in_pages(g_data.small_pages);
+
+	printf("LARGE : %p\n", large_addr);
+	total_bytes += print_alloc_mem_in_pages(g_data.large_pages);
+
+	printf("Total : %zu bytes\n", total_bytes);
 }
