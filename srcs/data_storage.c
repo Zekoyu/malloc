@@ -31,6 +31,7 @@ t_page *add_new_page(size_t size, t_page **pages)
 		while (tmp->next)
 			tmp = tmp->next;
 		tmp->next = page;
+		page->prev = tmp;
 	}
 
 	return page;
@@ -63,6 +64,20 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			block->addr = (void *)((char *)block + sizeof(t_block));
 			block->real_size = real_block_size;
 			page->first = block;
+
+			for (t_page *tmp = page->prev; tmp != NULL; tmp = tmp->prev)
+			{
+				if (tmp->last)
+				{
+					tmp->last->next = block;
+					block->prev = tmp->last;
+					break;
+				}
+			}
+
+			if (g_data.blocks == NULL)
+				g_data.blocks = block;
+
 			return block;
 		}
 
@@ -80,6 +95,17 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			if (page->first)
 				page->first->prev = block;
 			page->first = block;
+
+			for (t_page *tmp = page->prev; tmp != NULL; tmp = tmp->prev)
+			{
+				if (tmp->last)
+				{
+					tmp->last->next = block;
+					block->prev = tmp->last;
+					break;
+				}
+			}
+
 			return block;
 		}
 
@@ -161,6 +187,20 @@ t_block *allocate_block(size_t size, t_page **pages)
 	new_block->real_size = size + sizeof(t_block);
 	new_page->first = new_block;
 	new_page->last = new_block;
+
+	// Set previous block->next to block (check all pages until we find one page not empty)
+	for (t_page *tmp = new_page->prev; tmp != NULL; tmp = tmp->prev)
+	{
+		if (tmp->last)
+		{
+			tmp->last->next = new_block;
+			new_block->prev = tmp->last;
+			break;
+		}
+	}
+
+	if (g_data.blocks == NULL)
+		g_data.blocks = new_block;
 
 	return new_block;
 }

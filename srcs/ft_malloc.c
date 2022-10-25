@@ -22,8 +22,3 @@ void *ft_malloc(size_t size)
 
 	return NULL;
 }
-
-void ft_free(void *ptr)
-{
-	return;
-}

@@ -36,7 +36,7 @@ int main()
 
 	srand(time(NULL));
 
-	for (int j = 0; j < 120; j++)
+	for (int j = 0; j < 1; j++)
 	{
 
 		int r = rand() % 4;
@@ -97,6 +97,15 @@ int main()
 
 	// show_alloc_pages();
 	show_alloc_mem();
+
+	printf("g_data block is %p\n", g_data.blocks);
+	size_t block_count = 0;
+	for (t_block *block = g_data.blocks; block != NULL; block = block->next)
+	{
+		block_count++;
+		printf("%p -> ", block->addr);
+	}
+	printf("\n total blocks: %zu\n", block_count);
 	printf("main malloc total is %zu\n", malloc_total);
 	// show_struct_mem_space();
 	// show_alloc_pages();

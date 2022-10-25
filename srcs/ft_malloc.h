@@ -21,6 +21,7 @@ typedef struct s_page
 	void *addr;
 	size_t real_size;
 	struct s_page *next;
+	struct s_page *prev;
 	t_block *first;
 	t_block *last;
 } t_page;
