@@ -28,7 +28,6 @@ typedef struct s_page
 
 typedef struct s_malloc_data
 {
-	t_block *blocks;
 	t_page *tiny_pages;
 	t_page *small_pages;
 	t_page *large_pages;

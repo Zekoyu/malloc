@@ -75,9 +75,6 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 				}
 			}
 
-			if (g_data.blocks == NULL)
-				g_data.blocks = block;
-
 			return block;
 		}
 
@@ -168,16 +165,20 @@ t_block *allocate_block(size_t size, t_page **pages)
 	t_page *new_page = NULL;
 
 	// no free space found, allocate new page
-	if (pages == &g_data.tiny_pages)
-		new_page = add_new_page(TINY_FT_MALLOC_MAX_SIZE * 100, pages);
-	else if (pages == &g_data.small_pages)
-		new_page = add_new_page(SMALL_FT_MALLOC_MAX_SIZE * 100, pages);
-	else if (pages == &g_data.large_pages)
-		new_page = add_new_page(size, pages);
+	size_t new_page_size;
+
+	if (size <= TINY_FT_MALLOC_MAX_SIZE)
+		new_page_size = TINY_FT_MALLOC_MAX_SIZE * 100;
+	else if (size <= SMALL_FT_MALLOC_MAX_SIZE)
+		new_page_size = SMALL_FT_MALLOC_MAX_SIZE * 100;
+	else
+		new_page_size = size;
+
+	new_page = add_new_page(new_page_size, pages);
 
 	if (!new_page)
 	{
-		printf("Cannot add new page (mmap failed)\n");
+		printf("Cannot add new page (mmap of %zu failed)\n", new_page_size);
 		return NULL;
 	}
 
@@ -198,9 +199,6 @@ t_block *allocate_block(size_t size, t_page **pages)
 			break;
 		}
 	}
-
-	if (g_data.blocks == NULL)
-		g_data.blocks = new_block;
 
 	return new_block;
 }

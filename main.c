@@ -36,7 +36,7 @@ int main()
 
 	srand(time(NULL));
 
-	for (int j = 0; j < 1; j++)
+	for (int j = 0; j < 100; j++)
 	{
 
 		int r = rand() % 4;
@@ -44,17 +44,25 @@ int main()
 
 		void *pouic = NULL;
 
-		// if (r == 0)
-		// 	pouic = ft_malloc(1024);
-		// else if (r == 1)
-		// 	pouic = ft_malloc(2048);
-		// else if (r == 2)
-		// 	pouic = ft_malloc(12345);
-		// else
-		// 	pouic = NULL;
+		if (r == 0)
+		{
+			pouic = ft_malloc(1024);
+			malloc_total += 1024;
+		}
+		else if (r == 1)
+		{
+			pouic = ft_malloc(2048);
+			malloc_total += 2048;
+		}
+		else if (r == 2)
+		{
+			pouic = ft_malloc(12345);
+			malloc_total += 12345;
+		}
+		else
+			pouic = NULL;
 
-		void *test = ft_malloc(1021);
-		malloc_total += 1021;
+		void *test = ft_malloc(1024);
 
 		((char *)test)[0] = '0';
 		if (pouic)
@@ -64,7 +72,8 @@ int main()
 
 		// malloc_total += 1024 + 2048 + 12345;
 
-		ft_free(pouic);
+		// ft_free(test);
+
 		// printf("-----------------\n");
 		// printf("Freed address %p (r = %d)\n", pouic, r);
 		// show_alloc_mem();
@@ -98,16 +107,16 @@ int main()
 	// show_alloc_pages();
 	show_alloc_mem();
 
-	printf("g_data block is %p\n", g_data.blocks);
-	size_t block_count = 0;
-	for (t_block *block = g_data.blocks; block != NULL; block = block->next)
-	{
-		block_count++;
-		printf("%p -> ", block->addr);
-	}
-	printf("\n total blocks: %zu\n", block_count);
+
+
+	// printf("g_data block is %p\n", g_data.blocks);
+	// size_t block_count = 0;
+	// for (t_block *block = g_data.blocks; block != NULL; block = block->next)
+	// {
+	// 	block_count++;
+	// 	printf("%p (%zu) -> ", block->addr, block->real_size);
+	// }
+	// printf("\ntotal blocks: %zu\n", block_count);
 	printf("main malloc total is %zu\n", malloc_total);
-	// show_struct_mem_space();
-	// show_alloc_pages();
 	return (0);
 }
