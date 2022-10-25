@@ -40,7 +40,7 @@ int main()
 	{
 
 		int r = rand() % 4;
-		r = j % 4;
+		// r = j % 4;
 
 		void *pouic = NULL;
 
@@ -62,6 +62,36 @@ int main()
 		else
 			pouic = NULL;
 
+		int r2 = rand() % 3;
+		if (r2 == 1)
+		{
+			if (r == 1)
+				malloc_total -= 2048;
+			else if (r == 0)
+				malloc_total -= 1024;
+			else if (r == 2)
+				malloc_total -= 12345;
+
+			pouic = ft_realloc(pouic, 5555);
+			malloc_total += 5555;
+		}
+		else if (r2 == 2)
+		{
+			if (r == 1)
+				malloc_total -= 2048;
+			else if (r == 0)
+				malloc_total -= 1024;
+			else if (r == 2)
+				malloc_total -= 12345;
+
+			pouic = ft_realloc(pouic, 123);
+			malloc_total += 123;
+		}
+		else
+		{
+
+		}
+
 		void *test = ft_malloc(1024);
 
 		((char *)test)[0] = '0';
@@ -72,7 +102,7 @@ int main()
 
 		// malloc_total += 1024 + 2048 + 12345;
 
-		// ft_free(test);
+		ft_free(test);
 
 		// printf("-----------------\n");
 		// printf("Freed address %p (r = %d)\n", pouic, r);

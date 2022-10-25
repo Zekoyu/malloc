@@ -64,6 +64,7 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 			block->addr = (void *)((char *)block + sizeof(t_block));
 			block->real_size = real_block_size;
 			page->first = block;
+			page->last = block;
 
 			for (t_page *tmp = page->prev; tmp != NULL; tmp = tmp->prev)
 			{

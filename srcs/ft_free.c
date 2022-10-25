@@ -1,11 +1,6 @@
 #include <libft.h>
 #include "./ft_malloc.h"
 
-typedef struct s_find_block_data
-{
-	t_block	*block;
-	t_page *page;
-} t_find_block_data;
 
 t_find_block_data find_block_data(void *ptr, t_page *pages)
 {
@@ -24,21 +19,8 @@ t_find_block_data find_block_data(void *ptr, t_page *pages)
 	return (t_find_block_data){ NULL, NULL };
 }
 
-void ft_free(void *ptr)
+void internal_free(t_find_block_data data)
 {
-	if (ptr == NULL)
-		return;
-
-	t_find_block_data data = find_block_data(ptr, g_data.tiny_pages);
-	if (data.block == NULL)
-		data = find_block_data(ptr, g_data.small_pages);
-	if (data.block == NULL)
-		data = find_block_data(ptr, g_data.large_pages);
-
-	if (data.block == NULL)
-		return;
-
-
 	t_block *block = data.block;
 	t_page *page = data.page;
 
@@ -85,4 +67,21 @@ void ft_free(void *ptr)
 	{
 		page->last = block->prev;
 	}
+}
+
+void ft_free(void *ptr)
+{
+	if (ptr == NULL)
+		return;
+
+	t_find_block_data data = find_block_data(ptr, g_data.tiny_pages);
+	if (data.block == NULL)
+		data = find_block_data(ptr, g_data.small_pages);
+	if (data.block == NULL)
+		data = find_block_data(ptr, g_data.large_pages);
+
+	if (data.block == NULL)
+		return;
+
+	internal_free(data);
 }

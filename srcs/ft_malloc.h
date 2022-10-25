@@ -35,6 +35,14 @@ typedef struct s_malloc_data
 
 extern t_malloc_data g_data;
 
+typedef struct s_find_block_data
+{
+	t_block	*block;
+	t_page *page;
+} t_find_block_data;
+
+t_find_block_data find_block_data(void *ptr, t_page *pages);
+void internal_free(t_find_block_data data);
 t_block *allocate_block(size_t size, t_page **pages);
 
 void *ft_malloc(size_t size);
