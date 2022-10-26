@@ -33,8 +33,6 @@ int is_same_size_category(t_find_block_data data, size_t new_size)
 
 void *ft_realloc(void *ptr, size_t size)
 {
-	return ft_malloc(size);
-
 	if (ptr == NULL)
 		return ft_malloc(size);
 
@@ -53,16 +51,9 @@ void *ft_realloc(void *ptr, size_t size)
 	if (data.block == NULL)
 		return NULL;
 
-	void *new = ft_malloc(size);
-	if (new == NULL)
-		return NULL;
-
 	size_t original_size = data.block->real_size - sizeof(t_block);
-	for (size_t i = 0; i < original_size; i++)
-		((char *)new)[i] = '0';
-	// ft_memcpy(new, ptr, original_size);
-	ft_free(ptr);
-	return new;
+	// If we realloc from 1000 to 10, only move 10 first bytes, always take smaller size
+	size_t move_size = original_size > size ? size : original_size;
 
 	if (!is_same_size_category(data, size))
 	{
@@ -70,15 +61,15 @@ void *ft_realloc(void *ptr, size_t size)
 		if (new_ptr == NULL)
 			return NULL;
 
-		ft_memcpy(new_ptr, ptr, data.block->real_size - sizeof(t_block));
-		ft_free(ptr);
+		ft_memcpy(new_ptr, ptr, move_size);
+		internal_free(data);
 		return new_ptr;
 	}
 
 	t_block *block = data.block;
 	t_page *page = data.page;
 
-	if (size + sizeof(t_block) <= block->real_size)
+	if (size <= original_size)
 	{
 		block->real_size = size + sizeof(t_block);
 		return block->addr; // same as return ptr
@@ -106,7 +97,7 @@ void *ft_realloc(void *ptr, size_t size)
 	if (!new_ptr)
 		return NULL;
 
-	ft_memcpy(new_ptr, ptr, block->real_size);
+	ft_memcpy(new_ptr, ptr, move_size);
 	internal_free(data); // a bit more efficient since we already searched for block position
 	return new_ptr;
 }

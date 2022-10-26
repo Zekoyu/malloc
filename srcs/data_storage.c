@@ -25,7 +25,6 @@ t_page *add_new_page(size_t size, t_page **pages)
 	if ((addr = mmap(NULL, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0)) == MAP_FAILED) // we dont care about last 2 args(fd and offset)
 		return NULL;
 
-	printf("Allocated %p for %lx bytes (end is %p)\n", addr, alloc_size, (char *)addr + alloc_size);
 	g_mmap_pages_count += alloc_size / page_size;
 
 	t_page *page = (t_page *)addr;
@@ -90,7 +89,7 @@ t_block *create_block_if_space(size_t size, t_page *pages)
 
 		char *page_start_usable_addr = (char *)page + sizeof(t_page);
 
-		size_t free_before_first_block = (char *)page->first->addr - page_start_usable_addr;
+		size_t free_before_first_block = (char *)page->first - page_start_usable_addr;
 		if (free_before_first_block >= real_block_size)
 		{
 			// sizeof(something) is always aligned so no need to check
