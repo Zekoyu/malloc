@@ -246,12 +246,13 @@ t_block *allocate_block(size_t size, t_page **pages)
 	size_t new_page_size;
 
 	if (size <= TINY_FT_MALLOC_MAX_SIZE)
-		new_page_size = TINY_FT_MALLOC_MAX_SIZE * 100;
+		new_page_size = TINY_FT_MALLOC_MAX_SIZE * 100 + sizeof(t_page);
 	else if (size <= SMALL_FT_MALLOC_MAX_SIZE)
-		new_page_size = SMALL_FT_MALLOC_MAX_SIZE * 100;
+		new_page_size = SMALL_FT_MALLOC_MAX_SIZE * 100 + sizeof(t_page);
 	else
-		new_page_size = size;
+		new_page_size = size + sizeof(t_page);
 
+	// count t_page in needed size, otherwise if eg we malloc 4096*2, there will be no space for page and segfault
 	new_page = add_new_page(new_page_size, pages);
 
 	if (!new_page)

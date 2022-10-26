@@ -69,7 +69,7 @@ void internal_free(t_find_block_data data)
 	}
 }
 
-void ft_free(void *ptr)
+void free(void *ptr)
 {
 	if (ptr == NULL)
 		return;

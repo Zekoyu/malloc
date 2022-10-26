@@ -19,7 +19,7 @@ t_block *internal_malloc(size_t size)
 	return block;
 }
 
-void *ft_malloc(size_t size)
+void *malloc(size_t size)
 {
 	if (size == 0)
 		return NULL;

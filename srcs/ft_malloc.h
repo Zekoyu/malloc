@@ -74,9 +74,9 @@ int is_front_guard_intact(t_block *block);
 int is_back_guard_intact(t_block *block);
 void verify_blocks_integrity();
 
-void *ft_malloc(size_t size);
-void *ft_realloc(void *ptr, size_t size);
-void ft_free(void *ptr);
+void *malloc(size_t size);
+void *realloc(void *ptr, size_t size);
+void free(void *ptr);
 void show_alloc_mem();
 void show_alloc_mem_ex();
 size_t get_mmap_pages_count();

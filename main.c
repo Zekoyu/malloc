@@ -34,6 +34,13 @@ int main()
 	// pouet = ft_malloc(3000);
 	// pouet = ft_malloc(25);
 
+	void *t = malloc(1024*1024);
+	void *t2 = malloc(128*1024*1024);
+	// printf("malloc returned %p\n", t2);
+	((char *)t2)[1024*1024*128] = '4';
+
+	return 0;
+
 	srand(time(NULL));
 
 	for (int j = 0; j < 2; j++)
@@ -45,17 +52,17 @@ int main()
 
 		if (r == 0)
 		{
-			pouic = ft_malloc(1024);
+			pouic = malloc(1024);
 			malloc_total += 1024;
 		}
 		else if (r == 1)
 		{
-			pouic = ft_malloc(2048);
+			pouic = malloc(2048);
 			malloc_total += 2048;
 		}
 		else if (r == 2)
 		{
-			pouic = ft_malloc(12345);
+			pouic = malloc(12345);
 			malloc_total += 12345;
 		}
 		else
@@ -81,7 +88,7 @@ int main()
 			else if (r == 2)
 				malloc_total -= 12345;
 
-			pouic = ft_realloc(pouic, 5555);
+			pouic = realloc(pouic, 5555);
 			malloc_total += 5555;
 		}
 		else if (r2 == 2)
@@ -93,7 +100,7 @@ int main()
 			else if (r == 2)
 				malloc_total -= 12345;
 
-			pouic = ft_realloc(pouic, 123);
+			pouic = realloc(pouic, 123);
 			malloc_total += 123;
 		}
 		else
@@ -101,7 +108,7 @@ int main()
 
 		}
 
-		void *test = ft_malloc(1024);
+		void *test = malloc(1024);
 
 		((char *)test)[0] = '0';
 		((char *)test - sizeof(t_block))[2] = 'T';
@@ -113,7 +120,8 @@ int main()
 
 		// malloc_total += 1024 + 2048 + 12345;
 
-		ft_free(test);
+		free(test);
+		free(pouic);
 
 		// printf("-----------------\n");
 		// printf("Freed address %p (r = %d)\n", pouic, r);

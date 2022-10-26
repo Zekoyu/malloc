@@ -13,8 +13,8 @@ NAME := libft_malloc_$(HOSTTYPE).so
 
 CC = gcc
 
-CFLAGS = -I$(LIBFT_FOLDER) -lpthread -g -fsanitize=address # -Wall -Wextra -Werror
-DEBUG_CFLAGS = -I$(LIBFT_FOLDER) -lpthread -g -fsanitize=address -DFT_MALLOC_BACK_GUARD=32 -DFT_MALLOC_FRONT_GUARD=32 -DFT_MALLOC_DEBUG=1
+CFLAGS = -fPIC -I$(LIBFT_FOLDER) -lpthread
+DEBUG_CFLAGS = -fPIC -I$(LIBFT_FOLDER) -lpthread -DFT_MALLOC_BACK_GUARD=32 -DFT_MALLOC_FRONT_GUARD=32 -DFT_MALLOC_DEBUG=1
 
 OS := $(shell uname)
 
@@ -49,22 +49,14 @@ endif
 $(NAME):	$(LIBFT) $(OBJS)
 	@echo
 	@echo "$(PURPLE)Linking ($(PURPLE)*.o) into $(PURPLE_BOLD)$(NAME)$(RESET)"
-	@ar rcs $(NAME) $(OBJS)
 # https://stackoverflow.com/questions/3821916/how-to-merge-two-ar-static-libraries-into-one
 # merge libmalloc and libft into libmalloc
 	@echo "$(PURPLE)Merging ($(PURPLE)$(NAME) $(LIBFT)) into $(PURPLE_BOLD)$(NAME)$(RESET)"
 
-	@if [ $(OS) = "Darwin" ]; then \
-	libtool -static -o $(NAME) $(NAME) $(LIBFT) ;\
-	fi
-
-	@if [ $(OS) = "Linux" ]; then \
-	mkdir tmp ;\
-	ar x --output tmp $(LIBFT) ;\
-	ar x --output tmp $(NAME) ;\
-	ar rcs $(NAME) tmp/*.o ;\
-	rm -rf tmp ;\
-	fi
+	@mkdir -p tmp ;
+	@ar x --output tmp $(LIBFT) ;
+	@gcc -shared tmp/*.o $(OBJS) -o $(NAME) ;
+	@rm -rf tmp ;
 
 	@echo "$(AQUA)Creating symlink ($(AQUA_BOLD)libft_malloc.so $(AQUA)-> $(AQUA_BOLD)$(NAME)$(AQUA))$(RESET)"
 	@ln -s -f ./$(NAME) ./libft_malloc.so

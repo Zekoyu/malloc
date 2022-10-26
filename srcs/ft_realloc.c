@@ -31,16 +31,21 @@ int is_same_size_category(t_find_block_data data, size_t new_size)
 	return (original_category == new_category);
 }
 
-void *ft_realloc(void *ptr, size_t size)
+void *realloc(void *ptr, size_t size)
 {
 	if (ptr == NULL)
-		return ft_malloc(size);
+		return malloc(size);
 
 	if (size == 0)
 	{
-		ft_free(ptr);
+		free(ptr);
 		return NULL;
 	}
+
+	void *ptr2 = malloc(size);
+	free(ptr);
+	printf("Free %p and malloc %p for size %zu\n", ptr, ptr2, size);
+	return ptr2;
 
 	pthread_mutex_lock(&g_mutex);
 
