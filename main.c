@@ -104,6 +104,8 @@ int main()
 		void *test = ft_malloc(1024);
 
 		((char *)test)[0] = '0';
+		((char *)test - sizeof(t_block))[2] = 'T';
+
 		if (pouic)
 			((char *)pouic)[100] = '1';
 		// void *test2 = ft_malloc(2048);
@@ -144,7 +146,7 @@ int main()
 	// printf("%zu metadata mmap and %zu data mmap\nTotal : %zu mmap\n", meta_mmap, data_mmap, meta_mmap + data_mmap);
 
 	// show_alloc_pages();
-	show_alloc_mem_ex();
+	show_alloc_mem();
 	printf("Total pages requested: %zu\n", get_mmap_pages_count());
 
 

@@ -76,6 +76,10 @@ void ft_free(void *ptr)
 
 	pthread_mutex_lock(&g_mutex);
 
+	#if defined(FT_MALLOC_BACK_GUARD) || defined(FT_MALLOC_FRONT_GUARD)
+	verify_blocks_integrity();
+	#endif
+
 	t_find_block_data data = find_block_data(ptr, g_data.tiny_pages);
 	if (data.block == NULL)
 		data = find_block_data(ptr, g_data.small_pages);

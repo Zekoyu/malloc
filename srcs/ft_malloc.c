@@ -26,7 +26,16 @@ void *ft_malloc(size_t size)
 
 	pthread_mutex_lock(&g_mutex);
 
+	#if defined(FT_MALLOC_BACK_GUARD) || defined(FT_MALLOC_FRONT_GUARD)
+	verify_blocks_integrity();
+	#endif
+
 	t_block *block = internal_malloc(size);
+
+	if (block)
+	{
+
+	}
 
 	pthread_mutex_unlock(&g_mutex);
 

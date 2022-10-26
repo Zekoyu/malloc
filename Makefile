@@ -14,6 +14,7 @@ NAME := libft_malloc_$(HOSTTYPE).so
 CC = gcc
 
 CFLAGS = -I$(LIBFT_FOLDER) -lpthread -g -fsanitize=address # -Wall -Wextra -Werror
+DEBUG_CFLAGS = -I$(LIBFT_FOLDER) -lpthread -g -fsanitize=address -DFT_MALLOC_BACK_GUARD=32 -DFT_MALLOC_FRONT_GUARD=32 -DFT_MALLOC_DEBUG=1
 
 OS := $(shell uname)
 
@@ -38,7 +39,11 @@ SAME_LINE = \033[0G\033[2K
 RESET = \033[0m
 
 %.o: %.c
+ifdef DEBUG
+	@$(CC) $(DEBUG_CFLAGS) -c $< -o $@
+else
 	@$(CC) $(CFLAGS) -c $< -o $@
+endif
 	@echo -n "$(SAME_LINE)$(AQUA)Compiling $(AQUA_BOLD)$<$(RESET)"
 
 $(NAME):	$(LIBFT) $(OBJS)
@@ -69,8 +74,15 @@ all:		$(NAME)
 
 test: $(NAME) main.o
 	@echo
-	@$(CC) $(CFLAGS) main.c -lft_malloc -L./ -o test
+ifdef DEBUG
+	@$(CC) $(DEBUG_CFLAGS) main.o -lft_malloc -L./ -o test
+else
+	@$(CC) $(CFLAGS) main.o -lft_malloc -L./ -o test
+endif
 	@echo "$(GREEN_BOLD)Done compiling $(GREEN_UNDERLINE)test$(RESET)"
+
+debug: fclean
+	@$(MAKE) test DEBUG=1
 
 $(LIBFT):
 	@$(MAKE) -C $(LIBFT_FOLDER) NO_FT_MALLOC=1 NO_GNL=1
