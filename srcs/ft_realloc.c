@@ -42,11 +42,6 @@ void *realloc(void *ptr, size_t size)
 		return NULL;
 	}
 
-	void *ptr2 = malloc(size);
-	free(ptr);
-	printf("Free %p and malloc %p for size %zu\n", ptr, ptr2, size);
-	return ptr2;
-
 	pthread_mutex_lock(&g_mutex);
 
 	#if defined(FT_MALLOC_BACK_GUARD) || defined(FT_MALLOC_FRONT_GUARD)
