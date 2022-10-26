@@ -36,7 +36,7 @@ int main()
 
 	srand(time(NULL));
 
-	for (int j = 0; j < 2000; j++)
+	for (int j = 0; j < 2; j++)
 	{
 		int r = rand() % 4;
 		// r = (j + 1) % 4;
@@ -60,6 +60,15 @@ int main()
 		}
 		else
 			pouic = NULL;
+
+		if (pouic)
+		{
+			char *suce = pouic;
+			suce[0] = 1;
+			suce[1] = 2;
+			suce[2] = 3;
+			suce[3] = 127;
+		}
 
 		int r2 = rand() % 3;
 		// r2 = j % 3;
@@ -135,7 +144,7 @@ int main()
 	// printf("%zu metadata mmap and %zu data mmap\nTotal : %zu mmap\n", meta_mmap, data_mmap, meta_mmap + data_mmap);
 
 	// show_alloc_pages();
-	show_alloc_mem();
+	show_alloc_mem_ex();
 	printf("Total pages requested: %zu\n", get_mmap_pages_count());
 
 
