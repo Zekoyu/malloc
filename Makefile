@@ -13,7 +13,7 @@ NAME := libft_malloc_$(HOSTTYPE).so
 
 CC = gcc
 
-CFLAGS = -I$(LIBFT_FOLDER) -g -fsanitize=address # -Wall -Wextra -Werror
+CFLAGS = -I$(LIBFT_FOLDER) -lpthread -g -fsanitize=address # -Wall -Wextra -Werror
 
 OS := $(shell uname)
 

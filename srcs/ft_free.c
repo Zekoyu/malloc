@@ -74,6 +74,8 @@ void ft_free(void *ptr)
 	if (ptr == NULL)
 		return;
 
+	pthread_mutex_lock(&g_mutex);
+
 	t_find_block_data data = find_block_data(ptr, g_data.tiny_pages);
 	if (data.block == NULL)
 		data = find_block_data(ptr, g_data.small_pages);
@@ -81,7 +83,11 @@ void ft_free(void *ptr)
 		data = find_block_data(ptr, g_data.large_pages);
 
 	if (data.block == NULL)
+	{
+		pthread_mutex_unlock(&g_mutex);
 		return;
+	}
 
 	internal_free(data);
+	pthread_mutex_unlock(&g_mutex);
 }

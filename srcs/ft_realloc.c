@@ -42,6 +42,8 @@ void *ft_realloc(void *ptr, size_t size)
 		return NULL;
 	}
 
+	pthread_mutex_lock(&g_mutex);
+
 	t_find_block_data data = find_block_data(ptr, g_data.tiny_pages);
 	if (data.block == NULL)
 		data = find_block_data(ptr, g_data.small_pages);
@@ -49,7 +51,10 @@ void *ft_realloc(void *ptr, size_t size)
 		data = find_block_data(ptr, g_data.large_pages);
 
 	if (data.block == NULL)
+	{
+		pthread_mutex_unlock(&g_mutex);
 		return NULL;
+	}
 
 	size_t original_size = data.block->real_size - sizeof(t_block);
 	// If we realloc from 1000 to 10, only move 10 first bytes, always take smaller size
@@ -57,13 +62,17 @@ void *ft_realloc(void *ptr, size_t size)
 
 	if (!is_same_size_category(data, size))
 	{
-		void *new_ptr = ft_malloc(size);
-		if (new_ptr == NULL)
+		t_block *new_block = internal_malloc(size);
+		if (new_block == NULL)
+		{
+			pthread_mutex_unlock(&g_mutex);
 			return NULL;
+		}
 
-		ft_memcpy(new_ptr, ptr, move_size);
+		ft_memcpy(new_block->addr, ptr, move_size);
 		internal_free(data);
-		return new_ptr;
+		pthread_mutex_unlock(&g_mutex);
+		return new_block->addr;
 	}
 
 	t_block *block = data.block;
@@ -72,6 +81,7 @@ void *ft_realloc(void *ptr, size_t size)
 	if (size <= original_size)
 	{
 		block->real_size = size + sizeof(t_block);
+		pthread_mutex_unlock(&g_mutex);
 		return block->addr; // same as return ptr
 	}
 
@@ -88,16 +98,23 @@ void *ft_realloc(void *ptr, size_t size)
 	if (size + sizeof(t_block) <= max_possible_block_size)
 	{
 		block->real_size = size + sizeof(t_block);
+		pthread_mutex_unlock(&g_mutex);
 		return block->addr;
 	}
 
 
 	// at this point we need to move the block to a new location
-	void *new_ptr = ft_malloc(size);
-	if (!new_ptr)
+	// Use internal malloc instead of normal malloc to avoid mutex lock loop
+	t_block *new_block = internal_malloc(size);
+	if (!new_block)
+	{
+		pthread_mutex_unlock(&g_mutex);
 		return NULL;
+	}
 
-	ft_memcpy(new_ptr, ptr, move_size);
+	ft_memcpy(new_block->addr, ptr, move_size);
 	internal_free(data); // a bit more efficient since we already searched for block position
-	return new_ptr;
+
+	pthread_mutex_unlock(&g_mutex);
+	return new_block->addr;
 }

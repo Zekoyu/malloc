@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <pthread.h>
 
 #define TINY_FT_MALLOC_MAX_SIZE 1024
 #define SMALL_FT_MALLOC_MAX_SIZE 4096
@@ -33,6 +34,7 @@ typedef struct s_malloc_data
 } t_malloc_data;
 
 extern t_malloc_data g_data;
+extern pthread_mutex_t g_mutex;
 
 typedef struct s_find_block_data
 {
@@ -42,6 +44,7 @@ typedef struct s_find_block_data
 
 t_find_block_data find_block_data(void *ptr, t_page *pages);
 void internal_free(t_find_block_data data);
+t_block *internal_malloc(size_t size);
 t_block *allocate_block(size_t size, t_page **pages);
 
 void *ft_malloc(size_t size);
