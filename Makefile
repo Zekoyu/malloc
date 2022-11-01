@@ -53,8 +53,7 @@ $(NAME):	$(LIBFT) $(OBJS)
 # merge libmalloc and libft into libmalloc
 	@echo "$(PURPLE)Merging ($(PURPLE)$(NAME) $(LIBFT)) into $(PURPLE_BOLD)$(NAME)$(RESET)"
 
-	@mkdir -p tmp ;
-	@ar x --output tmp $(LIBFT) ;
+	@mkdir -p tmp && cd ./tmp/ && ar x ../$(LIBFT) && cd ../;
 	@gcc -shared tmp/*.o $(OBJS) -o $(NAME) ;
 	@rm -rf tmp ;
 
@@ -80,6 +79,7 @@ $(LIBFT):
 	@$(MAKE) -C $(LIBFT_FOLDER) NO_FT_MALLOC=1 NO_GNL=1
 
 clean:
+	@rm -f main.o
 	@rm -f $(OBJS)
 	@echo "$(RED)Removing $(IRED)*.o$(RESET)"
 	@make -C $(LIBFT_FOLDER) clean

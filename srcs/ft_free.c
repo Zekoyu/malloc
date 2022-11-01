@@ -57,7 +57,7 @@ void internal_free(t_find_block_data data)
 			g_data.large_pages = page->next;
 
 		if (munmap(page, page->real_size) == -1)
-			printf("munmap error\n");
+			ft_putstr_fd("munmap error\n", STDERR_FILENO);
 	}
 	else if (block == page->first)
 	{

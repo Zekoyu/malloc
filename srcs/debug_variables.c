@@ -8,9 +8,9 @@ void verify_block_integrity_in_pages(t_page *pages)
 		for (t_block *block = page->first; block != NULL; block = block->next)
 		{
 			if (!is_front_guard_intact(block))
-				fprintf(stderr, "Front guard is not intact for address %p (size %zu)\n", block->addr, block->real_size - sizeof(t_block));
+				ft_printf_fd(STDERR_FILENO, "Front guard is not intact for address %p (size %u)\n", block->addr, block->real_size - sizeof(t_block));
 			if (!is_back_guard_intact(block))
-				fprintf(stderr, "Back guard is not intact for address %p (size %zu)\n", block->addr, block->real_size - sizeof(t_block));
+				ft_printf_fd(STDERR_FILENO, "Back guard is not intact for address %p (size %u)\n", block->addr, block->real_size - sizeof(t_block));
 		}
 	}
 }

@@ -257,7 +257,9 @@ t_block *allocate_block(size_t size, t_page **pages)
 
 	if (!new_page)
 	{
-		printf("Cannot add new page (mmap of %zu failed)\n", new_page_size);
+		ft_putstr_fd("cannot add new page (mmap of ", STDOUT_FILENO);
+		ft_putnbr_fd(new_page_size, STDOUT_FILENO);
+		ft_putstr_fd(" failed)\n", STDOUT_FILENO);
 		return NULL;
 	}
 

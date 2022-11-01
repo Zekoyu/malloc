@@ -32,11 +32,6 @@ void *malloc(size_t size)
 
 	t_block *block = internal_malloc(size);
 
-	if (block)
-	{
-
-	}
-
 	pthread_mutex_unlock(&g_mutex);
 
 	if (block)
